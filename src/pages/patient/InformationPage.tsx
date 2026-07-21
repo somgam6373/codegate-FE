@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
+import { useToast } from '../../context/ToastContext'
 
 const MEDICATIONS = ['고혈압약', '당뇨약', '고지혈증약', '갑상선약', '항응고제', '진통제', '없음']
 const CONDITIONS = ['고혈압', '당뇨', '고지혈증', '심장질환', '갑상선질환', '관절염', '천식', '없음']
@@ -44,11 +46,34 @@ function ChipGroup({
 
 function InformationPage() {
   const navigate = useNavigate()
+  const { token } = useAuth()
+  const showToast = useToast()
   const [medications, setMedications] = useState<string[]>([])
   const [conditions, setConditions] = useState<string[]>([])
+  const [submitting, setSubmitting] = useState(false)
 
-  function handleComplete() {
-    navigate('/home', { state: { medications, conditions } })
+  async function handleComplete() {
+    setSubmitting(true)
+    try {
+      const res = await fetch('/api/v1/patients/me', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ medications, diseases: conditions }),
+      })
+      const json = await res.json()
+      if (!json.success) {
+        showToast(json.error?.message ?? '저장에 실패했어요', 'error')
+        return
+      }
+      navigate('/home')
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : '저장에 실패했어요', 'error')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -91,9 +116,10 @@ function InformationPage() {
         <button
           type="button"
           onClick={handleComplete}
-          className="w-full rounded-2xl bg-primary py-[17px] text-base font-extrabold text-white"
+          disabled={submitting}
+          className="w-full rounded-2xl bg-primary py-[17px] text-base font-extrabold text-white disabled:opacity-50"
         >
-          완료
+          {submitting ? '저장 중...' : '완료'}
         </button>
       </div>
     </div>
