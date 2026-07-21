@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { getHospitalMe } from '../../api/hospital'
 import { useAuth } from '../../context/AuthContext'
-import logo from '../../assets/img.png'
 import './hospital.css'
 
 const navItems = [
@@ -11,10 +10,10 @@ const navItems = [
     label: '대시보드',
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.8}>
-        <rect x="3" y="3" width="6" height="6" rx="1.5" />
-        <rect x="11" y="3" width="6" height="6" rx="1.5" />
-        <rect x="3" y="11" width="6" height="6" rx="1.5" />
-        <rect x="11" y="11" width="6" height="6" rx="1.5" />
+        <rect x="2.5" y="2.5" width="6.5" height="6.5" rx="1.2" />
+        <rect x="11" y="2.5" width="6.5" height="6.5" rx="1.2" />
+        <rect x="2.5" y="11" width="6.5" height="6.5" rx="1.2" />
+        <rect x="11" y="11" width="6.5" height="6.5" rx="1.2" />
       </svg>
     ),
   },
@@ -116,7 +115,7 @@ function HospitalLayout() {
       <aside className="h-sidebar">
         <div className="h-brand">
           <div className="h-brand-logo-wrap">
-            <img src={logo} alt="Smart Clinical Automation" className="h-brand-logo" />
+            <img src="/entire.png" alt="Smart Clinical Automation" className="h-brand-logo" />
           </div>
         </div>
         <nav className="h-nav">
