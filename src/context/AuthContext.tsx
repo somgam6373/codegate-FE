@@ -22,10 +22,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState(loadStored)
 
   function login(result: LoginResult) {
-    localStorage.setItem('token', result.token)
+    localStorage.setItem('token', result.accessToken)
     localStorage.setItem('role', result.role)
-    localStorage.setItem('userId', result.userId)
-    setState({ token: result.token, role: result.role, userId: result.userId })
+    localStorage.setItem('userId', String(result.userId))
+    setState({ token: result.accessToken, role: result.role, userId: String(result.userId) })
   }
 
   function logout() {
