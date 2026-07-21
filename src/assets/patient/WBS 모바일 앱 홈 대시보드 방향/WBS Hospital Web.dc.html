@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Pretendard,system-ui,sans-serif;-webkit-font-smoothing:antialiased;background:#0a5540}
+  a{color:#0b7d5c;text-decoration:none}a:hover{color:#12a67a}
+  .nav{display:flex;align-items:center;gap:13px;padding:12px 16px;border-radius:12px;font-size:15px;font-weight:600;color:#a9dcc9;cursor:pointer;transition:background .15s}
+  .nav svg{flex:none}
+  .nav:hover{background:rgba(255,255,255,.06)}
+  .card{background:#fff;border-radius:18px;border:1px solid rgba(20,35,29,.07)}
+  .sub{background:#fafcfb;border:1px solid rgba(20,35,29,.07);border-radius:14px}
+  .stripe{background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.06) 0 10px,transparent 10px 20px);display:flex;align-items:center;justify-content:center;font:600 11px ui-monospace,Menlo,monospace;color:rgba(255,255,255,.7);text-align:center;letter-spacing:.15em}
+  .btn-a{font-size:14px;font-weight:700;color:#fff;background:#12a67a;padding:10px 20px;border-radius:11px;cursor:pointer;border:none}
+  .btn-r{font-size:14px;font-weight:700;color:#e8705a;background:#fcece9;padding:10px 18px;border-radius:11px;cursor:pointer;border:none}
+  .scroll{overflow:auto}
+  .scroll::-webkit-scrollbar{width:8px}.scroll::-webkit-scrollbar-thumb{background:rgba(20,35,29,.12);border-radius:4px}
+</style>
+</helmet>
+<div style="width:1440px;height:900px;display:flex;background:#eef4f0;overflow:hidden;position:relative">
+
+  <!-- ===== Sidebar ===== -->
+  <aside style="width:264px;flex:none;background:linear-gradient(180deg,#0c6b50,#0a4d3b);display:flex;flex-direction:column;padding:26px 20px">
+    <div style="display:flex;align-items:center;gap:12px;padding:4px 8px 28px">
+      <div style="width:40px;height:40px;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 22 22" fill="#0c6b50"><rect x="9" y="3" width="4" height="16" rx="1"/><rect x="3" y="9" width="16" height="4" rx="1"/></svg></div>
+      <div><div style="font-size:16px;font-weight:800;color:#fff;line-height:1.1">메디링크</div><div style="font-size:12px;color:#a9dcc9">병원 관리자</div></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <div class="nav" style="{{ stDash }}" onClick="{{ goDash }}"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="11" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="11" width="6" height="6" rx="1.5"/><rect x="11" y="11" width="6" height="6" rx="1.5"/></svg>대시보드</div>
+      <div class="nav" style="{{ stRes }}" onClick="{{ goRes }}"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="14" height="13" rx="2.5"/><line x1="3" y1="8" x2="17" y2="8"/><line x1="7" y1="2" x2="7" y2="5.5" stroke-linecap="round"/><line x1="13" y1="2" x2="13" y2="5.5" stroke-linecap="round"/></svg>예약 관리</div>
+      <div class="nav" style="{{ stPatients }}" onClick="{{ goPatients }}"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10" cy="7" r="3.2"/><path d="M4 17a6 6 0 0112 0" stroke-linecap="round"/></svg>환자 데이터</div>
+      <div class="nav" style="{{ stSettings }}" onClick="{{ goSettings }}"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10" cy="10" r="3"/><path d="M10 2v2M10 16v2M18 10h-2M4 10H2M15.7 4.3l-1.4 1.4M5.7 14.3l-1.4 1.4M15.7 15.7l-1.4-1.4M5.7 5.7L4.3 4.3" stroke-linecap="round"/></svg>진료 설정</div>
+    </div>
+    <div style="margin-top:auto;display:flex;align-items:center;gap:12px;padding:14px 8px;border-top:1px solid rgba(255,255,255,.12)">
+      <div style="width:38px;height:38px;border-radius:11px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700">박</div>
+      <div style="flex:1"><div style="font-size:14px;font-weight:700;color:#fff">박지현 원장</div><div style="font-size:11px;color:#a9dcc9">서울내과의원</div></div>
+    </div>
+  </aside>
+
+  <!-- ===== Main ===== -->
+  <main style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+    <header style="flex:none;height:80px;background:#fff;border-bottom:1px solid rgba(20,35,29,.07);display:flex;align-items:center;padding:0 34px;gap:24px">
+      <div><div style="font-size:22px;font-weight:800;color:#14231d">{{ title }}</div><div style="font-size:13px;color:#7c8c83;margin-top:1px">{{ subtitle }}</div></div>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:16px">
+        <div style="display:flex;align-items:center;gap:10px;background:#f0f5f2;border-radius:12px;padding:11px 16px;width:280px"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="#9aa8a0" stroke-width="1.8"><circle cx="8.5" cy="8.5" r="6"/><line x1="13" y1="13" x2="17" y2="17" stroke-linecap="round"/></svg><span style="font-size:14px;color:#9aa8a0">환자·예약 검색</span></div>
+        <div style="width:42px;height:42px;border-radius:12px;background:#f0f5f2;display:flex;align-items:center;justify-content:center;position:relative"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#5c6f66" stroke-width="1.8"><path d="M10 3a5 5 0 015 5v3l1.5 2.5H3.5L5 11V8a5 5 0 015-5z"/><path d="M8 16a2 2 0 004 0" stroke-linecap="round"/></svg><span style="position:absolute;top:9px;right:10px;width:8px;height:8px;border-radius:50%;background:#e8705a;border:2px solid #f0f5f2"></span></div>
+      </div>
+    </header>
+
+    <div class="scroll" style="flex:1;overflow:auto;padding:28px 34px">
+
+      <!-- ===== 대시보드 ===== -->
+      <sc-if value="{{ showDash }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:22px">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:18px">
+          <div class="card" style="padding:20px 22px"><div style="font-size:13px;color:#7c8c83;font-weight:600">오늘 예약</div><div style="font-size:30px;font-weight:800;color:#14231d;margin-top:6px">24<span style="font-size:14px;color:#9aa8a0;font-weight:600">건</span></div></div>
+          <div class="card" style="padding:20px 22px"><div style="font-size:13px;color:#7c8c83;font-weight:600">등록 환자</div><div style="font-size:30px;font-weight:800;color:#14231d;margin-top:6px">1,284<span style="font-size:14px;color:#9aa8a0;font-weight:600">명</span></div></div>
+          <div class="card" style="padding:20px 22px;border:2px solid #e0a23a;background:#fffdf7"><div style="font-size:13px;color:#c98a1e;font-weight:700">승인 대기</div><div style="font-size:30px;font-weight:800;color:#14231d;margin-top:6px">6<span style="font-size:14px;color:#9aa8a0;font-weight:600">건</span></div></div>
+          <div class="card" style="padding:20px 22px"><div style="font-size:13px;color:#7c8c83;font-weight:600">진료 완료</div><div style="font-size:30px;font-weight:800;color:#0b7d5c;margin-top:6px">15<span style="font-size:14px;color:#9aa8a0;font-weight:600">건</span></div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:22px">
+          <div class="card" style="padding:24px">
+            <div style="font-size:16px;font-weight:800;color:#14231d;margin-bottom:20px">주간 예약 추이</div>
+            <svg viewBox="0 0 560 200" style="width:100%;height:210px">
+              <line x1="0" y1="20" x2="560" y2="20" stroke="#eef2ef"/><line x1="0" y1="70" x2="560" y2="70" stroke="#eef2ef"/><line x1="0" y1="120" x2="560" y2="120" stroke="#eef2ef"/><line x1="0" y1="170" x2="560" y2="170" stroke="#e2e9e5"/>
+              <polyline points="30,140 118,110 206,120 294,70 382,90 470,45 545,60" fill="none" stroke="#12a67a" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <polygon points="30,140 118,110 206,120 294,70 382,90 470,45 545,60 545,170 30,170" fill="#12a67a" opacity=".08"/>
+              <circle cx="470" cy="45" r="5" fill="#12a67a"/>
+              <g font-size="12" fill="#9aa8a0" font-family="Pretendard"><text x="24" y="192">월</text><text x="112" y="192">화</text><text x="200" y="192">수</text><text x="288" y="192">목</text><text x="376" y="192">금</text><text x="464" y="192">토</text><text x="540" y="192">일</text></g>
+            </svg>
+          </div>
+          <div class="card" style="display:flex;flex-direction:column;overflow:hidden;max-height:340px">
+            <div style="padding:20px 24px;border-bottom:1px solid rgba(20,35,29,.07);font-size:16px;font-weight:800;color:#14231d">오늘 진료 일정</div>
+            <div class="scroll" style="flex:1;overflow:auto;padding:18px 22px;display:flex;flex-direction:column;gap:2px">
+              <div style="display:flex;gap:14px"><div style="width:52px;font-size:13px;font-weight:700;color:#9aa8a0;padding-top:2px">09:30</div><div style="flex:1;border-left:2px solid #e2e9e5;padding:0 0 18px 16px;position:relative"><span style="position:absolute;left:-6px;top:4px;width:10px;height:10px;border-radius:50%;background:#c3cec8"></span><div style="font-size:14px;font-weight:700;color:#14231d">한지민 · 46세</div><div style="font-size:12px;color:#0b7d5c;font-weight:600">완료</div></div></div>
+              <div style="display:flex;gap:14px"><div style="width:52px;font-size:13px;font-weight:700;color:#9aa8a0;padding-top:2px">10:00</div><div style="flex:1;border-left:2px solid #e2e9e5;padding:0 0 18px 16px;position:relative"><span style="position:absolute;left:-6px;top:4px;width:10px;height:10px;border-radius:50%;background:#c3cec8"></span><div style="font-size:14px;font-weight:700;color:#14231d">오세훈 · 52세</div><div style="font-size:12px;color:#0b7d5c;font-weight:600">완료</div></div></div>
+              <div style="display:flex;gap:14px"><div style="width:52px;font-size:13px;font-weight:800;color:#0c6b50;padding-top:2px">10:30</div><div style="flex:1;border-left:2px solid #12a67a;padding:0 0 18px 16px;position:relative"><span style="position:absolute;left:-7px;top:2px;width:12px;height:12px;border-radius:50%;background:#12a67a;border:2px solid #fff;box-shadow:0 0 0 2px #12a67a"></span><div style="background:#e3f2ec;border-radius:12px;padding:12px 14px"><div style="font-size:14px;font-weight:800;color:#14231d">김민수 · 46세</div><div style="font-size:12px;color:#0b7d5c;font-weight:700;margin-top:1px">진료 중 · 고지혈증 경과</div></div></div></div>
+              <div style="display:flex;gap:14px"><div style="width:52px;font-size:13px;font-weight:700;color:#5c6f66;padding-top:2px">11:00</div><div style="flex:1;border-left:2px solid #e2e9e5;padding:0 0 18px 16px;position:relative"><span style="position:absolute;left:-6px;top:4px;width:10px;height:10px;border-radius:50%;background:#12a67a"></span><div style="font-size:14px;font-weight:700;color:#14231d">이서연 · 33세</div><div style="font-size:12px;color:#7c8c83">대기</div></div></div>
+              <div style="display:flex;gap:14px"><div style="width:52px;font-size:13px;font-weight:700;color:#5c6f66;padding-top:2px">11:30</div><div style="flex:1;border-left:2px solid #e2e9e5;padding:0 0 6px 16px;position:relative"><span style="position:absolute;left:-6px;top:4px;width:10px;height:10px;border-radius:50%;background:#12a67a"></span><div style="font-size:14px;font-weight:700;color:#14231d">강태오 · 29세</div><div style="font-size:12px;color:#7c8c83">대기</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ===== 예약 관리 ===== -->
+      <sc-if value="{{ showRes }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flex-direction:column;gap:22px">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:18px">
+          <div class="card" style="padding:20px 22px"><div style="font-size:13px;color:#7c8c83;font-weight:600">오늘 예약</div><div style="font-size:30px;font-weight:800;color:#14231d;margin-top:6px">24<span style="font-size:14px;color:#9aa8a0;font-weight:600">건</span></div></div>
+          <div class="card" style="padding:20px 22px;border:2px solid #e0a23a;background:#fffdf7"><div style="font-size:13px;color:#c98a1e;font-weight:700">승인 대기</div><div style="font-size:30px;font-weight:800;color:#14231d;margin-top:6px">6<span style="font-size:14px;color:#9aa8a0;font-weight:600">건</span></div></div>
+          <div class="card" style="padding:20px 22px"><div style="font-size:13px;color:#7c8c83;font-weight:600">진료 완료</div><div style="font-size:30px;font-weight:800;color:#0b7d5c;margin-top:6px">15<span style="font-size:14px;color:#9aa8a0;font-weight:600">건</span></div></div>
+          <div class="card" style="padding:20px 22px"><div style="font-size:13px;color:#7c8c83;font-weight:600">취소·거절</div><div style="font-size:30px;font-weight:800;color:#14231d;margin-top:6px">3<span style="font-size:14px;color:#9aa8a0;font-weight:600">건</span></div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1.35fr 1fr;gap:22px;height:560px">
+          <!-- 캘린더 -->
+          <div class="card" style="padding:26px 28px">
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:22px">
+              <div style="width:36px;height:36px;border-radius:11px;border:1px solid rgba(20,35,29,.1);display:flex;align-items:center;justify-content:center;font-size:18px;color:#5c6f66;cursor:pointer">‹</div>
+              <div style="font-size:22px;font-weight:800;color:#14231d">2026년 7월</div>
+              <div style="width:36px;height:36px;border-radius:11px;border:1px solid rgba(20,35,29,.1);display:flex;align-items:center;justify-content:center;font-size:18px;color:#5c6f66;cursor:pointer">›</div>
+              <div style="margin-left:auto;display:flex;background:#eef2ef;border-radius:11px;padding:4px"><span style="font-size:14px;font-weight:700;background:#fff;color:#14231d;padding:7px 18px;border-radius:8px;box-shadow:0 1px 2px rgba(0,0,0,.06)">월</span><span style="font-size:14px;font-weight:600;color:#7c8c83;padding:7px 18px">주</span></div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:8px">
+              <span style="text-align:center;font-size:13px;font-weight:700;color:#e8705a">일</span><span style="text-align:center;font-size:13px;font-weight:700;color:#9aa8a0">월</span><span style="text-align:center;font-size:13px;font-weight:700;color:#9aa8a0">화</span><span style="text-align:center;font-size:13px;font-weight:700;color:#9aa8a0">수</span><span style="text-align:center;font-size:13px;font-weight:700;color:#9aa8a0">목</span><span style="text-align:center;font-size:13px;font-weight:700;color:#9aa8a0">금</span><span style="text-align:center;font-size:13px;font-weight:700;color:#3f72b0">토</span>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px">
+              <sc-for list="{{ calCells }}" as="c" hint-placeholder-count="35">
+              <div style="{{ c.wrap }}"><span style="{{ c.num }}">{{ c.day }}</span><sc-if value="{{ c.hasBadge }}" hint-placeholder-val="{{ false }}"><span style="{{ c.badge }}">{{ c.badgeCount }}</span></sc-if></div>
+              </sc-for>
+            </div>
+          </div>
+          <!-- 승인 대기 요청 -->
+          <div class="card" style="display:flex;flex-direction:column;overflow:hidden">
+            <div style="padding:20px 24px;border-bottom:1px solid rgba(20,35,29,.07);display:flex;align-items:center;justify-content:space-between"><span style="font-size:16px;font-weight:800;color:#14231d">승인 대기 요청</span><span style="font-size:12px;font-weight:700;color:#c98a1e;background:#fdf3df;padding:5px 12px;border-radius:20px">6건 대기</span></div>
+            <div class="scroll" style="flex:1;overflow:auto;padding:12px 16px;display:flex;flex-direction:column;gap:10px">
+              <sc-for list="{{ pending }}" as="p" hint-placeholder-count="6">
+              <div style="border:1px solid rgba(20,35,29,.08);border-radius:14px;padding:15px 16px;cursor:pointer" onClick="{{ p.onOpen }}">
+                <div style="display:flex;align-items:center;gap:12px">
+                  <div style="width:42px;height:42px;border-radius:12px;background:#e3f2ec;display:flex;align-items:center;justify-content:center;color:#0b7d5c;font-weight:700;flex:none">{{ p.initial }}</div>
+                  <div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:800;color:#14231d">{{ p.name }} <span style="font-size:12px;color:#9aa8a0;font-weight:600">{{ p.meta }}</span></div><div style="font-size:12px;color:#7c8c83;margin-top:2px">{{ p.dept }} · {{ p.slot }}</div></div>
+                </div>
+                <div style="display:flex;gap:8px;margin-top:12px"><button class="btn-r" style="flex:1" onClick="{{ p.stop }}">거절</button><button class="btn-a" style="flex:1" onClick="{{ p.stop }}">승인</button></div>
+              </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ===== 환자 데이터 · 목록 ===== -->
+      <sc-if value="{{ showList }}" hint-placeholder-val="{{ false }}">
+      <div class="card" style="overflow:hidden">
+        <div style="padding:20px 24px;border-bottom:1px solid rgba(20,35,29,.07);display:flex;align-items:center;gap:16px">
+          <span style="font-size:16px;font-weight:800;color:#14231d">환자 목록</span>
+          <span style="font-size:13px;color:#7c8c83">총 1,284명</span>
+          <div style="margin-left:auto;display:flex;gap:8px"><span style="font-size:13px;font-weight:700;background:#0c6b50;color:#fff;padding:8px 15px;border-radius:20px">전체</span><span style="font-size:13px;font-weight:600;background:#f0f5f2;color:#5c6f66;padding:8px 15px;border-radius:20px">주의 필요</span><span style="font-size:13px;font-weight:600;background:#f0f5f2;color:#5c6f66;padding:8px 15px;border-radius:20px">최근 방문</span></div>
+        </div>
+        <div style="display:grid;grid-template-columns:2fr 1fr 1.4fr 1.8fr 1fr 0.6fr;padding:14px 24px;font-size:12px;font-weight:700;color:#9aa8a0;border-bottom:1px solid rgba(20,35,29,.06)">
+          <span>환자</span><span>나이·성별</span><span>최근 방문</span><span>주요 수치</span><span>상태</span><span></span>
+        </div>
+        <sc-for list="{{ patients }}" as="pt" hint-placeholder-count="7">
+        <div style="display:grid;grid-template-columns:2fr 1fr 1.4fr 1.8fr 1fr 0.6fr;padding:16px 24px;align-items:center;border-bottom:1px solid rgba(20,35,29,.05);cursor:pointer" onClick="{{ pt.onOpen }}">
+          <div style="display:flex;align-items:center;gap:12px"><div style="width:38px;height:38px;border-radius:11px;background:#e3f2ec;display:flex;align-items:center;justify-content:center;color:#0b7d5c;font-weight:700">{{ pt.initial }}</div><span style="font-size:14px;font-weight:700;color:#14231d">{{ pt.name }}</span></div>
+          <span style="font-size:14px;color:#5c6f66">{{ pt.ageShort }}</span>
+          <span style="font-size:14px;color:#5c6f66">{{ pt.visit }}</span>
+          <span style="font-size:13px;color:#14231d;font-weight:600">{{ pt.metric }}</span>
+          <span><span style="font-size:12px;font-weight:700;padding:5px 11px;border-radius:12px;{{ pt.badgeStyle }}">{{ pt.status }}</span></span>
+          <span style="color:#c3cec8;font-size:18px;text-align:right">›</span>
+        </div>
+        </sc-for>
+      </div>
+      </sc-if>
+
+      <!-- ===== 환자 데이터 · 상세 ===== -->
+      <sc-if value="{{ showDetail }}" hint-placeholder-val="{{ false }}">
+      <div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;cursor:pointer;font-size:14px;font-weight:700;color:#5c6f66;width:fit-content" onClick="{{ goBackList }}"><span style="font-size:18px">‹</span>환자 목록으로</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+          <!-- left -->
+          <div style="display:flex;flex-direction:column;gap:20px">
+            <div style="display:flex;align-items:center;gap:18px">
+              <div style="width:66px;height:66px;border-radius:20px;background:#dcede4;display:flex;align-items:center;justify-content:center;color:#0b7d5c;font-weight:800;font-size:26px;flex:none">{{ det.initial }}</div>
+              <div style="flex:1"><div style="font-size:26px;font-weight:800;color:#14231d">{{ det.name }}</div><div style="font-size:14px;color:#7c8c83;margin-top:2px">{{ det.pid }} · {{ det.age }}</div></div>
+              <span style="font-size:13px;font-weight:700;color:#0b7d5c;border:1.5px solid #b6ddca;background:#f0f8f4;padding:9px 16px;border-radius:22px">{{ det.status }}</span>
+            </div>
+            <div class="sub" style="padding:22px 24px">
+              <div style="font-size:15px;font-weight:800;color:#0b7d5c;margin-bottom:16px">기본 정보</div>
+              <div style="display:flex;flex-direction:column;gap:14px">
+                <div style="display:flex"><span style="width:120px;font-size:14px;color:#7c8c83">환자 ID</span><span style="font-size:14px;font-weight:700;color:#14231d">{{ det.pid }}</span></div>
+                <div style="display:flex"><span style="width:120px;font-size:14px;color:#7c8c83">나이</span><span style="font-size:14px;font-weight:700;color:#14231d">{{ det.ageOnly }}</span></div>
+                <div style="display:flex"><span style="width:120px;font-size:14px;color:#7c8c83">성별</span><span style="font-size:14px;font-weight:700;color:#14231d">{{ det.sex }}</span></div>
+                <div style="display:flex"><span style="width:120px;font-size:14px;color:#7c8c83">생년월일</span><span style="font-size:14px;font-weight:700;color:#14231d">{{ det.birth }}</span></div>
+                <div style="display:flex"><span style="width:120px;font-size:14px;color:#7c8c83">연락처</span><span style="font-size:14px;font-weight:700;color:#14231d">{{ det.phone }}</span></div>
+              </div>
+            </div>
+            <div class="sub" style="padding:22px 24px">
+              <div style="font-size:15px;font-weight:800;color:#0b7d5c;margin-bottom:16px">예약 정보</div>
+              <div style="display:flex;flex-direction:column;gap:14px">
+                <div style="display:flex"><span style="width:120px;font-size:14px;color:#7c8c83">담당 의사</span><span style="font-size:14px;font-weight:700;color:#14231d">{{ det.doctor }}</span></div>
+                <div style="display:flex"><span style="width:120px;font-size:14px;color:#7c8c83">예약 날짜</span><span style="font-size:14px;font-weight:700;color:#14231d">{{ det.date }}</span></div>
+                <div style="display:flex"><span style="width:120px;font-size:14px;color:#7c8c83">예약 시간</span><span style="font-size:14px;font-weight:700;color:#14231d">{{ det.time }}</span></div>
+              </div>
+            </div>
+            <div class="sub" style="padding:22px 24px">
+              <div style="font-size:15px;font-weight:800;color:#0b7d5c;margin-bottom:16px">진료 정보</div>
+              <div style="font-size:13px;color:#7c8c83;margin-bottom:6px">방문 사유 / 증상</div>
+              <div style="font-size:15px;font-weight:700;color:#14231d;margin-bottom:16px">{{ det.symptom }}</div>
+              <div style="font-size:13px;color:#7c8c83;margin-bottom:6px">과거 진료 이력</div>
+              <div style="font-size:15px;font-weight:700;color:#14231d;margin-bottom:16px">{{ det.history }}</div>
+              <div style="font-size:13px;color:#7c8c83;margin-bottom:8px">알레르기 정보</div>
+              <span style="display:inline-block;font-size:13px;font-weight:700;color:#e8705a;background:#fcece9;padding:7px 14px;border-radius:11px">{{ det.allergy }}</span>
+            </div>
+          </div>
+          <!-- right -->
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div style="font-size:17px;font-weight:800;color:#14231d">등록 의료 영상</div>
+            <div style="font-size:13px;color:#7c8c83;margin-top:-8px">진단서 · CT · MRI 영상을 확인할 수 있습니다. 이미지를 클릭하면 확대됩니다.</div>
+            <div class="stripe" style="height:340px;border-radius:18px;background-color:#0e2540;position:relative">진단서 영상
+              <span style="position:absolute;top:16px;left:16px;font-size:12px;font-weight:700;color:#fff;background:rgba(0,0,0,.55);padding:6px 12px;border-radius:8px;letter-spacing:0">진단서</span>
+              <span style="position:absolute;bottom:16px;right:16px;font-size:12px;font-weight:600;color:#fff;background:rgba(255,255,255,.16);padding:7px 13px;border-radius:20px;letter-spacing:0">⊕ 클릭하여 확대</span>
+            </div>
+            <div style="display:flex;gap:14px">
+              <div class="stripe" style="width:104px;height:74px;border-radius:12px;background-color:#0e2540;border:2px solid #12a67a">진단서</div>
+              <div class="stripe" style="width:104px;height:74px;border-radius:12px;background-color:#232a55">CT</div>
+              <div class="stripe" style="width:104px;height:74px;border-radius:12px;background-color:#331f4a">MRI</div>
+            </div>
+            <div class="sub" style="padding:20px 22px;margin-top:4px">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="width:9px;height:9px;border-radius:50%;background:#12a67a"></span><span style="font-size:14px;font-weight:800;color:#14231d">판독 메모</span></div>
+              <div style="font-size:14px;color:#2b3a33;line-height:1.6">{{ det.memo }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ===== 진료 설정 ===== -->
+      <sc-if value="{{ showSettings }}" hint-placeholder-val="{{ false }}">
+      <div style="display:grid;grid-template-columns:1fr 1.35fr;gap:22px">
+        <div class="card" style="padding:26px;height:fit-content">
+          <div style="font-size:16px;font-weight:800;color:#14231d;margin-bottom:6px">병원 정보</div>
+          <div style="font-size:13px;color:#7c8c83;margin-bottom:20px">공동인증으로 등록된 기관 정보</div>
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div><div style="font-size:13px;font-weight:700;color:#14231d;margin-bottom:7px">기관명</div><div style="background:#f0f5f2;border:1px solid rgba(20,35,29,.08);border-radius:11px;padding:13px 15px;font-size:14px;font-weight:700;color:#14231d">서울내과의원</div></div>
+            <div><div style="font-size:13px;font-weight:700;color:#14231d;margin-bottom:7px">진료과목</div><div style="display:flex;gap:8px;flex-wrap:wrap"><span style="font-size:13px;font-weight:700;background:#e3f2ec;color:#0b7d5c;padding:9px 14px;border-radius:20px">내과 ✕</span><span style="font-size:13px;font-weight:700;background:#e3f2ec;color:#0b7d5c;padding:9px 14px;border-radius:20px">가정의학과 ✕</span><span style="font-size:13px;font-weight:600;background:#fff;color:#7c8c83;padding:9px 14px;border-radius:20px;border:1px dashed #c3cec8">+ 추가</span></div></div>
+          </div>
+        </div>
+        <div class="card" style="padding:26px 28px">
+          <div style="font-size:16px;font-weight:800;color:#14231d;margin-bottom:4px">진료 가능 일정</div>
+          <div style="font-size:13px;color:#7c8c83;margin-bottom:20px">날짜를 클릭하면 상세 진료 시간을 조정할 수 있습니다</div>
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:8px">
+            <span style="text-align:center;font-size:13px;font-weight:700;color:#e8705a">일</span><span style="text-align:center;font-size:13px;font-weight:700;color:#9aa8a0">월</span><span style="text-align:center;font-size:13px;font-weight:700;color:#9aa8a0">화</span><span style="text-align:center;font-size:13px;font-weight:700;color:#9aa8a0">수</span><span style="text-align:center;font-size:13px;font-weight:700;color:#9aa8a0">목</span><span style="text-align:center;font-size:13px;font-weight:700;color:#9aa8a0">금</span><span style="text-align:center;font-size:13px;font-weight:700;color:#3f72b0">토</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px">
+            <sc-for list="{{ calCells }}" as="c" hint-placeholder-count="35">
+            <div style="{{ c.wrap }}" onClick="{{ c.onSet }}"><span style="{{ c.num }}">{{ c.day }}</span><sc-if value="{{ c.hasBadge }}" hint-placeholder-val="{{ false }}"><span style="{{ c.badge }}">{{ c.badgeCount }}</span></sc-if></div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+    </div>
+  </main>
+
+  <!-- ===== 시간 조정 모달 ===== -->
+  <sc-if value="{{ showModal }}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;inset:0;background:rgba(10,60,45,.42);display:flex;align-items:center;justify-content:center;z-index:100" onClick="{{ closeModal }}">
+    <div style="width:440px;background:#fff;border-radius:22px;padding:30px 32px;box-shadow:0 30px 70px -20px rgba(0,0,0,.4)" onClick="{{ stop }}">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div style="font-size:20px;font-weight:800;color:#14231d">7월 {{ modalDay }}일 진료 시간</div>
+        <div style="width:32px;height:32px;border-radius:10px;background:#f0f5f2;display:flex;align-items:center;justify-content:center;font-size:16px;color:#5c6f66;cursor:pointer" onClick="{{ closeModal }}">✕</div>
+      </div>
+      <div style="font-size:13px;color:#7c8c83;margin-bottom:22px">해당 날짜의 진료 가능 여부와 시간을 설정합니다</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;background:#f0f8f4;border-radius:13px;padding:14px 18px;margin-bottom:20px">
+        <span style="font-size:15px;font-weight:700;color:#14231d">진료 가능</span>
+        <span style="width:48px;height:28px;border-radius:14px;background:#12a67a;position:relative;cursor:pointer"><span style="position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;background:#fff"></span></span>
+      </div>
+      <div style="display:flex;gap:14px;margin-bottom:26px">
+        <div style="flex:1"><div style="font-size:13px;font-weight:700;color:#14231d;margin-bottom:8px">시작 시간</div><div style="background:#f0f5f2;border:1px solid rgba(20,35,29,.1);border-radius:12px;padding:13px 15px;font-size:15px;font-weight:700;color:#14231d">09:00 ▾</div></div>
+        <div style="flex:1"><div style="font-size:13px;font-weight:700;color:#14231d;margin-bottom:8px">종료 시간</div><div style="background:#f0f5f2;border:1px solid rgba(20,35,29,.1);border-radius:12px;padding:13px 15px;font-size:15px;font-weight:700;color:#14231d">18:00 ▾</div></div>
+      </div>
+      <div style="display:flex;gap:12px">
+        <button style="flex:1;font-size:15px;font-weight:700;color:#5c6f66;background:#f0f5f2;padding:14px 0;border-radius:13px;border:none;cursor:pointer" onClick="{{ closeModal }}">취소</button>
+        <button style="flex:1.6;font-size:15px;font-weight:700;color:#fff;background:#12a67a;padding:14px 0;border-radius:13px;border:none;cursor:pointer" onClick="{{ closeModal }}">저장</button>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  state = { view: 'res', detail: null, modalDay: null };
+
+  buildCells() {
+    const badges = { 18: 4, 19: 2, 21: 7, 22: 3, 24: 2, 25: 1, 28: 4, 30: 2 };
+    const wrapBase = 'height:60px;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;position:relative';
+    const cells = [];
+    for (let i = 0; i < 35; i++) {
+      const day = i - 2;
+      if (day < 1 || day > 31) { cells.push({ blank: true, wrap: 'height:60px', day: '', hasBadge: false }); continue; }
+      const selected = day === 19, today = day === 21;
+      let wrap = wrapBase + ';cursor:pointer';
+      let num = 'font-size:16px;font-weight:700;color:#14231d';
+      let badge = 'width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;background:#12a67a;color:#fff';
+      if (selected) { wrap += ';background:#0c6b50'; num = 'font-size:16px;font-weight:800;color:#fff'; badge = 'width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;background:#fff;color:#0c6b50'; }
+      if (today) { wrap += ';border:2px solid #12a67a'; num = 'font-size:16px;font-weight:800;color:#0c6b50'; }
+      cells.push({ blank: false, day, wrap, num, hasBadge: day in badges, badgeCount: badges[day], badge, onSet: () => this.setState({ modalDay: day }) });
+    }
+    return cells;
+  }
+
+  mkDetail(o) {
+    const base = {
+      initial: '김', name: '김민준', pid: 'P-20260721-001', age: '42세 · 남',
+      ageOnly: '42세', sex: '남', birth: '1984.03.12', phone: '010-2345-6789',
+      doctor: '박정형 (정형외과)', date: '2026.07.21 (화)', time: '09:00',
+      symptom: '우측 무릎 통증 및 부종. 2주 전 등산 중 부상.',
+      history: '2023년 좌측 반월상 연골 파열 수술', allergy: '페니실린',
+      memo: '우측 슬관절 MRI 상 반월상 연골 부분 손상 소견. 추가 정밀 판독 요망.',
+      status: '예약 승인됨',
+    };
+    return Object.assign(base, o);
+  }
+
+  renderVals() {
+    const v = this.state.view;
+    const go = (k) => () => this.setState({ view: k, detail: null });
+    const active = 'background:rgba(255,255,255,.12);color:#fff';
+    const st = (k) => v === k ? active : '';
+    const meta = {
+      dash: ['대시보드', '병원 운영 현황 요약'],
+      res: ['예약 관리', '2026년 7월 21일 화요일'],
+      patients: ['환자 데이터', '등록 환자 1,284명'],
+      settings: ['진료 설정', '진료과목·일정 관리'],
+    };
+    const green = 'background:#e3f2ec;color:#0b7d5c';
+    const amber = 'background:#fdf3df;color:#c98a1e';
+    const stop = (e) => e.stopPropagation();
+
+    const pendingRaw = [
+      { initial: '김', name: '김민준', meta: '· 42세 남', dept: '정형외과', slot: '7/21 (화) 09:00', d: { name: '김민준', initial: '김', pid: 'P-20260721-001', age: '42세 · 남', ageOnly: '42세', sex: '남' } },
+      { initial: '이', name: '이서연', meta: '· 33세 여', dept: '내과', slot: '7/23 (수) 11:00', d: { name: '이서연', initial: '이', pid: 'P-20260723-014', age: '33세 · 여', ageOnly: '33세', sex: '여', doctor: '박지현 (내과)', date: '2026.07.23 (수)', time: '11:00', symptom: '기침 및 미열 3일 지속.', history: '특이사항 없음', allergy: '없음', memo: '흉부 CT 상 특이 소견 없음. 경과 관찰 권장.' } },
+      { initial: '정', name: '정우진', meta: '· 58세 남', dept: '내과', slot: '7/24 (목) 14:00', d: { name: '정우진', initial: '정', pid: 'P-20260724-021', age: '58세 · 남', ageOnly: '58세', sex: '남', doctor: '박지현 (내과)', date: '2026.07.24 (목)', time: '14:00', symptom: '공복혈당 상승, 피로감.', history: '2021년 고혈압 진단', allergy: '없음', memo: '혈당 재검사 및 당화혈색소 확인 필요.' } },
+      { initial: '최', name: '최유나', meta: '· 41세 여', dept: '내과', slot: '7/24 (목) 15:30', d: { name: '최유나', initial: '최', pid: 'P-20260724-022', age: '41세 · 여', ageOnly: '41세', sex: '여', doctor: '박지현 (내과)', date: '2026.07.24 (목)', time: '15:30', symptom: '건강검진 후 콜레스테롤 상담 요청.', history: '특이사항 없음', allergy: '아스피린', memo: '지질 프로필 재확인 권장.' } },
+      { initial: '강', name: '강태오', meta: '· 29세 남', dept: '가정의학과', slot: '7/25 (금) 09:30', d: { name: '강태오', initial: '강', pid: 'P-20260725-031', age: '29세 · 남', ageOnly: '29세', sex: '남', doctor: '이가정 (가정의학과)', date: '2026.07.25 (금)', time: '09:30', symptom: '건강검진 예약.', history: '특이사항 없음', allergy: '없음', memo: '기본 검진 항목 진행 예정.' } },
+      { initial: '윤', name: '윤소라', meta: '· 37세 여', dept: '내과', slot: '7/25 (금) 10:00', d: { name: '윤소라', initial: '윤', pid: 'P-20260725-032', age: '37세 · 여', ageOnly: '37세', sex: '여', doctor: '박지현 (내과)', date: '2026.07.25 (금)', time: '10:00', symptom: '소화불량 및 복부 불편감.', history: '2022년 위염', allergy: '없음', memo: '복부 CT 판독 대기 중.' } },
+    ];
+    const pending = pendingRaw.map((p) => ({ ...p, onOpen: () => this.setState({ view: 'patients', detail: this.mkDetail(p.d) }), stop }));
+
+    const patientsRaw = [
+      { initial: '김', name: '김민준', ageShort: '42세 · 남', visit: '2026.07.10', metric: '무릎 MRI 판독', status: '주의', badgeStyle: amber, d: { name: '김민준', initial: '김', pid: 'P-20260721-001', age: '42세 · 남', ageOnly: '42세', sex: '남' } },
+      { initial: '이', name: '이서연', ageShort: '33세 · 여', visit: '2026.07.08', metric: '혈압 122/80', status: '정상', badgeStyle: green, d: { name: '이서연', initial: '이', pid: 'P-20260723-014', age: '33세 · 여', ageOnly: '33세', sex: '여', symptom: '기침 및 미열 3일 지속.', history: '특이사항 없음', allergy: '없음' } },
+      { initial: '정', name: '정우진', ageShort: '58세 · 남', visit: '2026.06.30', metric: '혈당 141', status: '주의', badgeStyle: amber, d: { name: '정우진', initial: '정', pid: 'P-20260724-021', age: '58세 · 남', ageOnly: '58세', sex: '남', symptom: '공복혈당 상승, 피로감.', history: '2021년 고혈압 진단', allergy: '없음' } },
+      { initial: '최', name: '최유나', ageShort: '41세 · 여', visit: '2026.06.22', metric: '혈압 118/76', status: '정상', badgeStyle: green, d: { name: '최유나', initial: '최', pid: 'P-20260724-022', age: '41세 · 여', ageOnly: '41세', sex: '여', allergy: '아스피린' } },
+      { initial: '강', name: '강태오', ageShort: '29세 · 남', visit: '2026.06.15', metric: 'BMI 21.4', status: '정상', badgeStyle: green, d: { name: '강태오', initial: '강', pid: 'P-20260725-031', age: '29세 · 남', ageOnly: '29세', sex: '남', allergy: '없음' } },
+      { initial: '윤', name: '윤소라', ageShort: '37세 · 여', visit: '2026.06.02', metric: '콜레스테롤 205', status: '주의', badgeStyle: amber, d: { name: '윤소라', initial: '윤', pid: 'P-20260725-032', age: '37세 · 여', ageOnly: '37세', sex: '여', history: '2022년 위염' } },
+      { initial: '한', name: '한지민', ageShort: '52세 · 여', visit: '2026.05.28', metric: '혈압 130/85', status: '정상', badgeStyle: green, d: { name: '한지민', initial: '한', pid: 'P-20260528-009', age: '52세 · 여', ageOnly: '52세', sex: '여', allergy: '없음' } },
+    ];
+    const patients = patientsRaw.map((p) => ({ ...p, onOpen: () => this.setState({ view: 'patients', detail: this.mkDetail(p.d) }) }));
+
+    return {
+      title: meta[v][0], subtitle: meta[v][1],
+      showDash: v === 'dash', showRes: v === 'res', showSettings: v === 'settings',
+      showList: v === 'patients' && !this.state.detail,
+      showDetail: v === 'patients' && !!this.state.detail,
+      det: this.state.detail || {},
+      stDash: st('dash'), stRes: st('res'), stPatients: st('patients'), stSettings: st('settings'),
+      goDash: go('dash'), goRes: go('res'), goPatients: go('patients'), goSettings: go('settings'),
+      goBackList: () => this.setState({ detail: null }),
+      pending, patients,
+      calCells: this.buildCells(),
+      showModal: this.state.modalDay != null,
+      modalDay: this.state.modalDay,
+      closeModal: () => this.setState({ modalDay: null }),
+      stop,
+    };
+  }
+}
+</script>
+</body>
+</html>
