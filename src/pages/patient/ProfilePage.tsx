@@ -77,7 +77,7 @@ function ProfilePage() {
                     console.error('프로필 조회 실패', res.error)
                     return
                 }
-                const { name, gender, birthDate, medications, diseases } = res.data
+                const { name, gender, birthDate, medications, diseases, places } = res.data
 
                 setName(name ?? '')
                 setGender(gender === 'MALE' ? 'male' : gender === 'FEMALE' ? 'female' : null)
@@ -91,12 +91,12 @@ function ProfilePage() {
 
                 setMedications(medications ?? [])
                 setConditions(diseases ?? [])
+                setRegion(places ?? '')
             })
             .catch((err) => console.error('프로필 조회 실패', err))
     }, [token])
 
     const handleSave = async () => {
-        // 생년월일은 세 값이 모두 있을 때만 보냄 (하나라도 없으면 필드 생략 -> 기존 값 유지)
         const birthDate = year && month && day
             ? `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
             : undefined
@@ -107,6 +107,7 @@ function ProfilePage() {
             birthDate,
             medications,
             diseases: conditions,
+            places: region,
         }
 
         setSaving(true)
@@ -137,6 +138,7 @@ function ProfilePage() {
             }
             setMedications(data.medications ?? [])
             setConditions(data.diseases ?? [])
+            setRegion(data.places ?? '')
             setEditing(false)
         } catch (err) {
             console.error('프로필 수정 실패', err)
