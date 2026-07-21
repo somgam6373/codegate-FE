@@ -1,32 +1,10 @@
-import { api } from '../api/client'
+import { api, unwrapApiResponse } from '../api/client'
+import type { ApiResponse } from '../api/client'
 
-interface ApiResponse<T> {
-  success: boolean
-  data: T | null
-  error: { code: string; message: string; details?: Record<string, unknown> } | null
-}
-
-export class ApiError extends Error {
-  code: string
-  details?: Record<string, unknown>
-
-  constructor(code: string, message: string, details?: Record<string, unknown>) {
-    super(message)
-    this.code = code
-    this.details = details
-  }
-}
+export { ApiError } from '../api/client'
 
 async function unwrap<T>(res: Promise<ApiResponse<T>>): Promise<T> {
-  const body = await res
-  if (!body.success || body.data === null) {
-    throw new ApiError(
-      body.error?.code ?? 'API_ERROR',
-      body.error?.message ?? '요청 처리에 실패했습니다.',
-      body.error?.details,
-    )
-  }
-  return body.data
+  return unwrapApiResponse(await res)
 }
 
 export interface LoginResult {
