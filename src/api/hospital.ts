@@ -1,4 +1,4 @@
-import { api } from './client'
+import { api, unwrapApiResponse } from './client'
 import type { ApiResponse } from './client'
 
 export interface HospitalSlot {
@@ -34,9 +34,7 @@ export function getHospitalSlots(params: GetHospitalSlotsParams = {}) {
   if (params.size != null) query.set('size', String(params.size))
 
   const qs = query.toString()
-  return api<ApiResponse<PageResponse<HospitalSlot>>>(`/api/v1/hospital/slots${qs ? `?${qs}` : ''}`).then(
-    (res) => res.data,
-  )
+  return api<ApiResponse<PageResponse<HospitalSlot>>>(`/api/v1/hospital/slots${qs ? `?${qs}` : ''}`).then(unwrapApiResponse)
 }
 
 export type ReservationStatus = 'REQUESTED' | 'APPROVED' | 'REJECTED' | 'PATIENT_CANCELED' | 'HOSPITAL_CANCELED'
@@ -84,7 +82,7 @@ export function getHospitalReservations(params: GetHospitalReservationsParams = 
   if (params.size != null) query.set('size', String(params.size))
 
   const qs = query.toString()
-  return api<ApiResponse<PageResponse<HospitalReservation>>>(`/api/v1/hospital/reservations${qs ? `?${qs}` : ''}`).then(
-    (res) => res.data,
-  )
+  return api<ApiResponse<PageResponse<HospitalReservation>>>(
+    `/api/v1/hospital/reservations${qs ? `?${qs}` : ''}`,
+  ).then(unwrapApiResponse)
 }

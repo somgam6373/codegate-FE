@@ -1,4 +1,4 @@
-import { api } from './client'
+import { api, unwrapApiResponse } from './client'
 import type { ApiResponse } from './client'
 
 export interface HospitalSearchSlot {
@@ -53,7 +53,5 @@ export function searchHospitals(params: SearchHospitalsParams) {
   if (params.fromTime) query.set('fromTime', params.fromTime)
   if (params.toTime) query.set('toTime', params.toTime)
 
-  return api<ApiResponse<HospitalSearchResult>>(`/api/v1/hospitals/search?${query.toString()}`).then(
-    (res) => res.data,
-  )
+  return api<ApiResponse<HospitalSearchResult>>(`/api/v1/hospitals/search?${query.toString()}`).then(unwrapApiResponse)
 }
