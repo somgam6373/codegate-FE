@@ -17,8 +17,8 @@ function HomePage() {
             </p>
             <h1 className="mt-1 text-2xl font-bold text-ink">안녕하세요, {name ?? '회원'}님</h1>
           </div>
-          <div className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-2xl bg-primary-bg font-bold text-primary-text shadow-[0_6px_14px_-8px_rgba(11,107,80,0.35)]">
-            {name?.[0] ?? '회'}
+          <div className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-2xl bg-primary-bg shadow-[0_6px_14px_-8px_rgba(11,107,80,0.35)]">
+            <img src="/bear.png" alt={name ?? '회원'} className="h-full w-full object-contain" />
           </div>
         </header>
 

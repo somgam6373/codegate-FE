@@ -17,14 +17,12 @@ function LoginPage() {
     <div className="mx-auto flex min-h-dvh max-w-[480px] flex-col bg-onboarding-bg">
       <main className="flex flex-1 flex-col px-7 pb-8">
         <div className="flex flex-1 flex-col items-center justify-center text-center">
-          <div className="flex h-[76px] w-[76px] items-center justify-center rounded-[24px] bg-primary-deep shadow-[0_16px_34px_-14px_rgba(11,107,80,0.7)]">
-            <svg width="40" height="40" viewBox="0 0 22 22" fill="#fff">
-              <rect x="9" y="3" width="4" height="16" rx="1" />
-              <rect x="3" y="9" width="16" height="4" rx="1" />
-            </svg>
+          <div className="flex h-50 w-50 items-center justify-center">
+            <img src="/bear.png" alt="메디링크" className="h-full w-full object-contain" />
           </div>
-          <h1 className="mt-6 text-[30px] font-extrabold text-ink">메디링크</h1>
-          <p className="mt-2 text-[15px] leading-relaxed text-ink-soft">
+          <img src="/Smart%20Clinical.png" alt="Smart Clinical" className="h-10 w-auto object-contain" />
+          <img src="/automation.png" alt="Automation" className="h-[35px] w-auto object-contain" />
+          <p className="text-[15px] leading-relaxed text-ink-soft">
             예약부터 AI 건강 분석까지,
             <br />
             내 건강을 한 곳에서
