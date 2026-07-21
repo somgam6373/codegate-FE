@@ -10,7 +10,7 @@
 
 모든 응답은 `{success, data, error}` 형태로 래핑됨.
 
-현재 프론트엔드(`src/pages/patient/LoginPage.tsx`, `RegisterPage.tsx`, `InformationPage.tsx`)는 이 API들과 연동되어 있지 않고, "카카오로 시작하기" 버튼은 그냥 `/register`로 이동만 하는 목업 상태. 인증 상태 관리(`src/context`), 토스트 등 공용 UI(`src/components`)도 아직 없음.
+현재 프론트엔드(`src/pages/patient/HospitalLoginPage.tsx`, `RegisterPage.tsx`, `InformationPage.tsx`)는 이 API들과 연동되어 있지 않고, "카카오로 시작하기" 버튼은 그냥 `/register`로 이동만 하는 목업 상태. 인증 상태 관리(`src/context`), 토스트 등 공용 UI(`src/components`)도 아직 없음.
 
 ## 범위
 
@@ -44,7 +44,7 @@
 
 - **`src/main.tsx`**: `AuthProvider`, `ToastProvider`로 `<App />` 감싸기
 - **`src/App.tsx`**: `/oauth/kakao/callback` 라우트 추가, 인증 필요 라우트를 `ProtectedRoute`로 감싸기
-- **`src/pages/patient/LoginPage.tsx`**: "카카오로 시작하기" 클릭 시 `getKakaoLoginUrl(`${origin}/oauth/kakao/callback`)` 호출 후 `location.href = loginUrl`로 리다이렉트. 실패 시 토스트.
+- **`src/pages/patient/HospitalLoginPage.tsx`**: "카카오로 시작하기" 클릭 시 `getKakaoLoginUrl(`${origin}/oauth/kakao/callback`)` 호출 후 `location.href = loginUrl`로 리다이렉트. 실패 시 토스트.
 - **`src/pages/patient/RegisterPage.tsx`**:
   - 주민등록번호 입력 필드 추가 (기존 이름/성별/생년월일/지역 폼에 하나 추가)
   - `location.state`에 `code`/`redirectUri`가 없으면 `/login`으로 리다이렉트 (직접 접근 방지)

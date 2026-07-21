@@ -10,11 +10,17 @@ import RecordPage from './pages/patient/RecordPage'
 import AiReportPage from './pages/patient/AiReportPage'
 import ProfilePage from './pages/patient/ProfilePage'
 import ProtectedRoute from './routes/ProtectedRoute'
+import SignupPage from "./pages/hospital/SignupPage.tsx";
+import HospitalLoginPage from "./pages/hospital/HospitalLoginPage.tsx";
+import JoinChoicePage from "./pages/hospital/JoinChoicePage.tsx";
 
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route path="/" element={<JoinChoicePage />} />
+        <Route path="/hospitals/signup" element={<SignupPage />} />
+        <Route path="/hospitals/login" element={<HospitalLoginPage />} />
+
       <Route path="/login" element={<LoginPage />} />
       <Route path="/oauth/kakao/callback" element={<KakaoCallbackPage />} />
       <Route path="/register" element={<RegisterPage />} />
