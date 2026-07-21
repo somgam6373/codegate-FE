@@ -1,7 +1,27 @@
+import { useEffect, useState } from 'react'
+import { getHospitalReservations } from '../../api/hospital'
+import type { HospitalReservation } from '../../api/hospital'
+import { useToast } from '../../context/ToastContext'
 import { HospitalHeader } from './HospitalLayout'
-import { todaySchedule } from './hospitalData'
+
+const CLOSED_STATUSES: HospitalReservation['status'][] = ['REJECTED', 'PATIENT_CANCELED', 'HOSPITAL_CANCELED']
+
+function todayDateString() {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
 
 function DashboardPage() {
+  const showToast = useToast()
+  const [schedule, setSchedule] = useState<HospitalReservation[]>([])
+
+  useEffect(() => {
+    const date = todayDateString()
+    getHospitalReservations({ fromDate: date, toDate: date })
+      .then((page) => setSchedule([...page.content].sort((a, b) => a.startTime.localeCompare(b.startTime))))
+      .catch((err) => showToast(err instanceof Error ? err.message : '오늘 진료 일정을 불러오지 못했어요', 'error'))
+  }, [showToast])
+
   return (
     <>
       <HospitalHeader title="대시보드" subtitle="병원 운영 현황 요약" />
@@ -66,31 +86,20 @@ function DashboardPage() {
           <div className="h-card" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <div className="h-panel-header">오늘 진료 일정</div>
             <div className="h-timeline">
-              {todaySchedule.map((item) => {
-                const isActive = item.state === '진료 중'
-                const isDone = item.state === '완료'
+              {schedule.length === 0 && (
+                <p style={{ padding: '16px 20px', color: 'var(--h-text-sub)', fontSize: 15 }}>
+                  오늘 예약된 진료가 없어요
+                </p>
+              )}
+              {schedule.map((item) => {
+                const isDone = CLOSED_STATUSES.includes(item.status)
                 return (
-                  <div key={item.time} className={`h-timeline-row${isActive ? ' active' : ''}${isDone ? ' done' : ''}`}>
-                    <div className="h-timeline-time">{item.time}</div>
+                  <div key={item.reservationId} className={`h-timeline-row${isDone ? ' done' : ''}`}>
+                    <div className="h-timeline-time">{item.startTime}</div>
                     <div className="h-timeline-line">
                       <span className="h-timeline-dot" />
-                      {isActive ? (
-                        <div className="h-timeline-active-card">
-                          <div className="h-timeline-name">
-                            {item.name} · {item.age}
-                          </div>
-                          <div className="h-timeline-active-note">
-                            진료 중{item.note ? ` · ${item.note}` : ''}
-                          </div>
-                        </div>
-                      ) : (
-                        <>
-                          <div className="h-timeline-name">
-                            {item.name} · {item.age}
-                          </div>
-                          <div className={`h-timeline-state${isDone ? ' done' : ''}`}>{item.state}</div>
-                        </>
-                      )}
+                      <div className="h-timeline-name">{item.patientName}</div>
+                      <div className={`h-timeline-state${isDone ? ' done' : ''}`}>{item.statusLabel}</div>
                     </div>
                   </div>
                 )

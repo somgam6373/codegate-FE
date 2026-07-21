@@ -1,28 +1,99 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { HospitalHeader } from './HospitalLayout'
-import { patients, type Patient } from './hospitalData'
+import { getHospitalReservations, getReservationPatientInfo } from '../../api/hospital'
+import type { HospitalReservation, ReservationPatientInfo } from '../../api/hospital'
+import { useToast } from '../../context/ToastContext'
 
 type Filter = '전체' | '주의 필요' | '최근 방문'
+
+interface PatientRow {
+  reservationId: number
+  patientId: number
+  name: string
+  department: string
+  date: string
+  startTime: string
+  endTime: string
+  symptom: string
+  hospitalMemo: string | null
+  patientPhone: string
+  status: HospitalReservation['status']
+  statusLabel: string
+}
+
+function toPatientRows(reservations: HospitalReservation[]): PatientRow[] {
+  const latestByPatient = new Map<number, HospitalReservation>()
+  for (const r of reservations) {
+    const existing = latestByPatient.get(r.patientId)
+    if (!existing || r.date > existing.date) latestByPatient.set(r.patientId, r)
+  }
+  return [...latestByPatient.values()].map((r) => ({
+    reservationId: r.reservationId,
+    patientId: r.patientId,
+    name: r.patientName,
+    department: r.department,
+    date: r.date,
+    startTime: r.startTime,
+    endTime: r.endTime,
+    symptom: r.symptom ?? '증상 정보 없음',
+    hospitalMemo: r.hospitalMemo,
+    patientPhone: r.patientPhone,
+    status: r.status,
+    statusLabel: r.statusLabel,
+  }))
+}
+
+function calcAge(birthDate: string): number {
+  const birth = new Date(birthDate)
+  const now = new Date()
+  let age = now.getFullYear() - birth.getFullYear()
+  const hadBirthdayThisYear =
+    now.getMonth() > birth.getMonth() || (now.getMonth() === birth.getMonth() && now.getDate() >= birth.getDate())
+  if (!hadBirthdayThisYear) age -= 1
+  return age
+}
 
 function PatientsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [filter, setFilter] = useState<Filter>('전체')
+  const showToast = useToast()
+
+  const [reservations, setReservations] = useState<HospitalReservation[]>([])
+  const [loading, setLoading] = useState(true)
+  const [detail, setDetail] = useState<ReservationPatientInfo | null>(null)
+
   const pid = searchParams.get('pid')
 
-  const selected: Patient | undefined = useMemo(
-    () => patients.find((p) => p.detail.pid === pid),
-    [pid],
-  )
+  useEffect(() => {
+    getHospitalReservations({ size: 200 })
+      .then((page) => setReservations(page.content))
+      .catch((err) => showToast(err instanceof Error ? err.message : '환자 목록 조회에 실패했어요', 'error'))
+      .finally(() => setLoading(false))
+  }, [showToast])
+
+  const rows = useMemo(() => toPatientRows(reservations), [reservations])
+
+  const selected = useMemo(() => rows.find((r) => String(r.patientId) === pid), [rows, pid])
+
+  useEffect(() => {
+    if (!selected) {
+      setDetail(null)
+      return
+    }
+    getReservationPatientInfo(selected.reservationId)
+      .then(setDetail)
+      .catch((err) => showToast(err instanceof Error ? err.message : '환자 상세 조회에 실패했어요', 'error'))
+  }, [selected, showToast])
 
   const filtered = useMemo(() => {
-    if (filter === '주의 필요') return patients.filter((p) => p.status === '주의')
-    if (filter === '최근 방문') return [...patients].sort((a, b) => (a.visit < b.visit ? 1 : -1))
-    return patients
-  }, [filter])
+    if (filter === '주의 필요') return rows.filter((r) => r.status === 'REQUESTED')
+    if (filter === '최근 방문') return [...rows].sort((a, b) => (a.date < b.date ? 1 : -1))
+    return rows
+  }, [filter, rows])
 
-  function openPatient(p: Patient) {
-    setSearchParams({ pid: p.detail.pid })
+  function openPatient(r: PatientRow) {
+    setSearchParams({ pid: String(r.patientId) })
   }
 
   function backToList() {
@@ -30,7 +101,36 @@ function PatientsPage() {
   }
 
   if (selected) {
-    const d = selected.detail
+    if (!detail) {
+      return (
+        <>
+          <HospitalHeader title="환자 데이터" subtitle={`${selected.name}님 상세 정보`} />
+          <div className="h-content">
+            <button type="button" className="h-back-link" onClick={backToList}>
+              <span style={{ fontSize: 22 }}>‹</span>환자 목록으로
+            </button>
+            <p style={{ padding: '64px 0', textAlign: 'center', color: '#7c8c83' }}>불러오는 중이에요</p>
+          </div>
+        </>
+      )
+    }
+    const d = {
+      pid: `P-${detail.patientId}`,
+      name: detail.patientName,
+      age: `${calcAge(detail.birthDate)}세 · ${detail.gender === 'MALE' ? '남' : '여'}`,
+      ageOnly: `${calcAge(detail.birthDate)}세`,
+      sex: detail.gender === 'MALE' ? '남' : '여',
+      birth: detail.birthDate,
+      phone: selected.patientPhone,
+      department: selected.department,
+      date: selected.date,
+      time: `${selected.startTime} - ${selected.endTime}`,
+      symptom: selected.symptom,
+      history: detail.diseases.length ? detail.diseases.join(', ') : '특이사항 없음',
+      medications: detail.medications.length ? detail.medications.join(', ') : '없음',
+      memo: selected.hospitalMemo ?? '메모 없음',
+      status: selected.statusLabel,
+    }
     return (
       <>
         <HospitalHeader title="환자 데이터" subtitle={`${d.name}님 상세 정보`} />
@@ -77,8 +177,8 @@ function PatientsPage() {
               <div className="h-sub-card h-detail-section">
                 <div className="h-detail-section-title">예약 정보</div>
                 <div className="h-detail-field">
-                  <span className="h-detail-label">담당 의사</span>
-                  <span className="h-detail-value">{d.doctor}</span>
+                  <span className="h-detail-label">진료과</span>
+                  <span className="h-detail-value">{d.department}</span>
                 </div>
                 <div className="h-detail-field">
                   <span className="h-detail-label">예약 날짜</span>
@@ -96,8 +196,8 @@ function PatientsPage() {
                 <div className="h-detail-block-value">{d.symptom}</div>
                 <div className="h-detail-block-label">과거 진료 이력</div>
                 <div className="h-detail-block-value">{d.history}</div>
-                <div className="h-detail-block-label">알레르기 정보</div>
-                <span className="h-allergy-tag">{d.allergy}</span>
+                <div className="h-detail-block-label">복용 약물</div>
+                <span className="h-allergy-tag">{d.medications}</span>
               </div>
             </div>
 
@@ -136,12 +236,12 @@ function PatientsPage() {
 
   return (
     <>
-      <HospitalHeader title="환자 데이터" subtitle={`등록 환자 ${patients.length.toLocaleString()}명`} />
+      <HospitalHeader title="환자 데이터" subtitle={`등록 환자 ${rows.length.toLocaleString()}명`} />
       <div className="h-content">
         <div className="h-card" style={{ overflow: 'hidden' }}>
           <div className="h-list-header">
             <span className="h-list-title">환자 목록</span>
-            <span className="h-list-count">총 {patients.length.toLocaleString()}명</span>
+            <span className="h-list-count">총 {rows.length.toLocaleString()}명</span>
             <div className="h-filter-group">
               {(['전체', '주의 필요', '최근 방문'] as const).map((f) => (
                 <button
@@ -157,24 +257,30 @@ function PatientsPage() {
           </div>
           <div className="h-table-head">
             <span>환자</span>
-            <span>나이·성별</span>
+            <span>진료과</span>
             <span>최근 방문</span>
-            <span>주요 수치</span>
+            <span>증상</span>
             <span>상태</span>
             <span />
           </div>
-          {filtered.map((p) => (
-            <button key={p.detail.pid} type="button" className="h-table-row" onClick={() => openPatient(p)}>
-              <span className="h-table-name">{p.name}</span>
-              <span className="h-table-sub">{p.ageShort}</span>
-              <span className="h-table-sub">{p.visit}</span>
-              <span className="h-table-metric">{p.metric}</span>
-              <span>
-                <span className={`h-status-badge${p.status === '정상' ? ' normal' : ' warn'}`}>{p.status}</span>
-              </span>
-              <span className="h-table-chevron">›</span>
-            </button>
-          ))}
+          {loading ? (
+            <p style={{ padding: '64px 0', textAlign: 'center', color: '#7c8c83' }}>불러오는 중이에요</p>
+          ) : filtered.length === 0 ? (
+            <p style={{ padding: '64px 0', textAlign: 'center', color: '#7c8c83' }}>등록된 환자가 없어요</p>
+          ) : (
+            filtered.map((r) => (
+              <button key={r.reservationId} type="button" className="h-table-row" onClick={() => openPatient(r)}>
+                <span className="h-table-name">{r.name}</span>
+                <span className="h-table-sub">{r.department}</span>
+                <span className="h-table-sub">{r.date}</span>
+                <span className="h-table-metric">{r.symptom}</span>
+                <span>
+                  <span className={`h-status-badge${r.status === 'REQUESTED' ? ' warn' : ' normal'}`}>{r.statusLabel}</span>
+                </span>
+                <span className="h-table-chevron">›</span>
+              </button>
+            ))
+          )}
         </div>
       </div>
     </>

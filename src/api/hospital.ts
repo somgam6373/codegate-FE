@@ -1,14 +1,37 @@
 import { api, unwrapApiResponse } from './client'
 import type { ApiResponse } from './client'
 
+export interface HospitalMe {
+  hospitalId: number
+  hospitalName: string
+  hospitalLocation: string
+  availableTime: string
+  medicalSubjects: string
+}
+
+export function getHospitalMe() {
+  return api<ApiResponse<HospitalMe>>('/api/v1/hospital/me').then(unwrapApiResponse)
+}
+
+export type UpdateHospitalMeRequest = Omit<HospitalMe, 'hospitalId'>
+
+export function updateHospitalMe(body: UpdateHospitalMeRequest) {
+  return api<ApiResponse<HospitalMe>>('/api/v1/hospital/me', {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  }).then(unwrapApiResponse)
+}
+
 export interface HospitalSlot {
-  id: number
+  slotId: number
+  department: string
   date: string
+  dayOfWeek: string
   startTime: string
   endTime: string
-  department: string
-  capacity: number
-  reservedCount: number
+  timeZone: string
+  reserved: boolean
+  available: boolean
 }
 
 export interface PageResponse<T> {
@@ -35,6 +58,19 @@ export function getHospitalSlots(params: GetHospitalSlotsParams = {}) {
 
   const qs = query.toString()
   return api<ApiResponse<PageResponse<HospitalSlot>>>(`/api/v1/hospital/slots${qs ? `?${qs}` : ''}`).then(unwrapApiResponse)
+}
+
+export interface CreateHospitalSlotRequest {
+  department: string
+  date: string
+  startTime: string
+}
+
+export function createHospitalSlot(body: CreateHospitalSlotRequest) {
+  return api<ApiResponse<HospitalSlot>>('/api/v1/hospital/slots', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  }).then(unwrapApiResponse)
 }
 
 export type ReservationStatus = 'REQUESTED' | 'APPROVED' | 'REJECTED' | 'PATIENT_CANCELED' | 'HOSPITAL_CANCELED'
@@ -84,5 +120,35 @@ export function getHospitalReservations(params: GetHospitalReservationsParams = 
   const qs = query.toString()
   return api<ApiResponse<PageResponse<HospitalReservation>>>(
     `/api/v1/hospital/reservations${qs ? `?${qs}` : ''}`,
+  ).then(unwrapApiResponse)
+}
+
+export function approveReservation(reservationId: number, message?: string) {
+  return api<ApiResponse<HospitalReservation>>(`/api/v1/hospital/reservations/${reservationId}/approve`, {
+    method: 'POST',
+    body: message ? JSON.stringify({ message }) : undefined,
+  }).then(unwrapApiResponse)
+}
+
+export function rejectReservation(reservationId: number, message?: string) {
+  return api<ApiResponse<HospitalReservation>>(`/api/v1/hospital/reservations/${reservationId}/reject`, {
+    method: 'POST',
+    body: message ? JSON.stringify({ message }) : undefined,
+  }).then(unwrapApiResponse)
+}
+
+export interface ReservationPatientInfo {
+  reservationId: number
+  patientId: number
+  patientName: string
+  gender: 'MALE' | 'FEMALE'
+  birthDate: string
+  medications: string[]
+  diseases: string[]
+}
+
+export function getReservationPatientInfo(reservationId: number) {
+  return api<ApiResponse<ReservationPatientInfo>>(
+    `/api/v1/hospital/reservations/${reservationId}/patient`,
   ).then(unwrapApiResponse)
 }

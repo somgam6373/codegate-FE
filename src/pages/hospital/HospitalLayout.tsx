@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { logout } from '../auth/authStore'
+import { getHospitalMe } from '../../api/hospital'
+import { useAuth } from '../../context/AuthContext'
 import logo from '../../assets/img.png'
 import './hospital.css'
 
@@ -35,6 +37,16 @@ const navItems = [
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.8}>
         <circle cx="10" cy="7" r="3.2" />
         <path d="M4 17a6 6 0 0112 0" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
+    to: '/hospital/slots',
+    label: '슬롯 조회',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.8}>
+        <circle cx="10" cy="10" r="7.5" />
+        <path d="M10 5.5V10l3 2" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     ),
   },
@@ -87,10 +99,16 @@ export function HospitalHeader({ title, subtitle, hideSearch }: HospitalHeaderPr
 
 function HospitalLayout() {
   const navigate = useNavigate()
+  const auth = useAuth()
+  const [hospitalName, setHospitalName] = useState('')
+
+  useEffect(() => {
+    getHospitalMe().then((me) => setHospitalName(me.hospitalName)).catch(() => {})
+  }, [])
 
   function handleLogout() {
-    logout()
-    navigate('/', { replace: true })
+    auth.logout()
+    navigate('/hospital/login', { replace: true })
   }
 
   return (
@@ -117,7 +135,7 @@ function HospitalLayout() {
           <div className="h-avatar">박</div>
           <div style={{ flex: 1 }}>
             <div className="h-doctor-name">박지현 원장</div>
-            <div className="h-doctor-org">서울내과의원</div>
+            <div className="h-doctor-org">{hospitalName}</div>
           </div>
           <button type="button" className="h-logout-btn" onClick={handleLogout} aria-label="로그아웃">
             <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.8}>

@@ -1,24 +1,80 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { approveReservation, getHospitalReservations, rejectReservation, type HospitalReservation } from '../../api/hospital'
+import { useToast } from '../../context/ToastContext'
 import { HospitalHeader } from './HospitalLayout'
-import { buildCalendarCells, pendingReservations, weekdayLabels } from './hospitalData'
+import { buildCalendarCells, weekdayLabels } from './hospitalData'
 
 function ReservationsPage() {
   const navigate = useNavigate()
+  const showToast = useToast()
   const [monthOffset, setMonthOffset] = useState(0)
-  const [resolvedIds, setResolvedIds] = useState<Record<string, true>>({})
-  const cells = useMemo(() => buildCalendarCells(), [])
+  const [resolvedIds, setResolvedIds] = useState<Record<number, true>>({})
+  const [pending, setPending] = useState<HospitalReservation[]>([])
+  const [monthReservations, setMonthReservations] = useState<HospitalReservation[]>([])
 
-  const monthLabel = monthOffset === 0 ? '2026년 7월' : monthOffset > 0 ? '2026년 8월' : '2026년 6월'
-  const visiblePending = pendingReservations.filter((r) => !resolvedIds[r.id])
+  const today = new Date()
+  const visibleMonth = new Date(today.getFullYear(), today.getMonth() + monthOffset, 1)
+  const year = visibleMonth.getFullYear()
+  const month = visibleMonth.getMonth()
+  const monthLabel = `${year}년 ${month + 1}월`
+
+  const badgeCounts = useMemo(() => {
+    const counts: Record<number, number> = {}
+    for (const r of monthReservations) {
+      if (r.status !== 'REQUESTED' && r.status !== 'APPROVED') continue
+      const day = Number(r.date.split('-')[2])
+      counts[day] = (counts[day] ?? 0) + 1
+    }
+    return counts
+  }, [monthReservations])
+  const cells = useMemo(() => buildCalendarCells(year, month, badgeCounts), [year, month, badgeCounts])
+
+  const visiblePending = pending.filter((r) => !resolvedIds[r.reservationId])
   const pendingCount = visiblePending.length
 
-  function resolve(id: string) {
+  function fetchPending() {
+    getHospitalReservations({ status: 'REQUESTED' })
+      .then((res) => setPending(res.content))
+      .catch((err) => showToast(err instanceof Error ? err.message : '승인 대기 요청 조회에 실패했어요', 'error'))
+  }
+
+  function fetchMonth() {
+    const pad = (n: number) => String(n).padStart(2, '0')
+    const fromDate = `${year}-${pad(month + 1)}-01`
+    const toDate = `${year}-${pad(month + 1)}-${pad(new Date(year, month + 1, 0).getDate())}`
+    getHospitalReservations({ fromDate, toDate, size: 200 })
+      .then((res) => setMonthReservations(res.content))
+      .catch((err) => showToast(err instanceof Error ? err.message : '예약 캘린더 조회에 실패했어요', 'error'))
+  }
+
+  useEffect(fetchPending, [showToast])
+  useEffect(fetchMonth, [year, month, showToast])
+
+  function resolve(id: number) {
     setResolvedIds((prev) => ({ ...prev, [id]: true }))
   }
 
-  function openPatient(pid: string) {
-    navigate(`/hospital/patients?pid=${encodeURIComponent(pid)}`)
+  function handleApprove(id: number) {
+    approveReservation(id)
+      .then(() => {
+        resolve(id)
+        fetchMonth()
+      })
+      .catch((err) => showToast(err instanceof Error ? err.message : '예약 승인에 실패했어요', 'error'))
+  }
+
+  function handleReject(id: number) {
+    rejectReservation(id)
+      .then(() => {
+        resolve(id)
+        fetchMonth()
+      })
+      .catch((err) => showToast(err instanceof Error ? err.message : '예약 거절에 실패했어요', 'error'))
+  }
+
+  function openPatient(patientId: number) {
+    navigate(`/hospital/patients?pid=${patientId}`)
   }
 
   return (
@@ -113,15 +169,13 @@ function ReservationsPage() {
             </div>
             <div className="h-pending-list">
               {visiblePending.map((res) => (
-                <div key={res.id} className="h-pending-item">
-                  <div className="h-pending-row" onClick={() => openPatient(res.detail.pid)}>
-                    <div className="h-pending-initial">{res.initial}</div>
+                <div key={res.reservationId} className="h-pending-item">
+                  <div className="h-pending-row" onClick={() => openPatient(res.patientId)}>
+                    <div className="h-pending-initial">{res.patientName.charAt(0)}</div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div className="h-pending-name">
-                        {res.name} <span className="h-pending-meta">{res.meta}</span>
-                      </div>
+                      <div className="h-pending-name">{res.patientName}</div>
                       <div className="h-pending-dept">
-                        {res.dept} · {res.slot}
+                        {res.department} · {res.date} {res.startTime}
                       </div>
                     </div>
                   </div>
@@ -131,7 +185,7 @@ function ReservationsPage() {
                       className="h-btn h-btn-reject"
                       onClick={(e) => {
                         e.stopPropagation()
-                        resolve(res.id)
+                        handleReject(res.reservationId)
                       }}
                     >
                       거절
@@ -141,7 +195,7 @@ function ReservationsPage() {
                       className="h-btn h-btn-primary"
                       onClick={(e) => {
                         e.stopPropagation()
-                        resolve(res.id)
+                        handleApprove(res.reservationId)
                       }}
                     >
                       승인

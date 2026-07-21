@@ -1,18 +1,33 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { login } from './authStore'
+import { hospitalLogin } from '../../api/auth'
+import { useAuth } from '../../context/AuthContext'
+import { useToast } from '../../context/ToastContext'
 import './auth.css'
 
 function LoginPage() {
   const navigate = useNavigate()
+  const auth = useAuth()
+  const showToast = useToast()
+  const [loginId, setLoginId] = useState('')
+  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
 
-  function handleKakaoLogin() {
+  async function handleLogin() {
+    if (!loginId || !password) {
+      showToast('아이디와 비밀번호를 입력해 주세요', 'error')
+      return
+    }
     setLoading(true)
-    setTimeout(() => {
-      login()
+    try {
+      const result = await hospitalLogin({ loginId, password })
+      auth.login(result)
       navigate('/hospital/dashboard', { replace: true })
-    }, 500)
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : '로그인에 실패했어요', 'error')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -26,17 +41,23 @@ function LoginPage() {
         </div>
         <div className="auth-title">메디링크</div>
         <div className="auth-subtitle">병원 관리자 시스템</div>
-        <button type="button" className="auth-kakao-btn" onClick={handleKakaoLogin} disabled={loading}>
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="#191600">
-            <path d="M10 2C5.03 2 1 5.13 1 9c0 2.49 1.68 4.68 4.2 5.93-.18.66-.66 2.4-.76 2.77-.12.46.17.45.36.33.15-.1 2.35-1.6 3.31-2.25.62.09 1.26.14 1.89.14 4.97 0 9-3.13 9-7 0-3.87-4.03-6.92-9-6.92z" />
-          </svg>
-          카카오로 시작하기
+        <input
+          type="text"
+          placeholder="로그인 아이디"
+          value={loginId}
+          onChange={(e) => setLoginId(e.target.value)}
+          className="auth-input"
+        />
+        <input
+          type="password"
+          placeholder="비밀번호"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="auth-input"
+        />
+        <button type="button" className="auth-kakao-btn" onClick={handleLogin} disabled={loading}>
+          {loading ? '로그인 중...' : '로그인'}
         </button>
-        <div className="auth-hint">
-          카카오 계정으로 로그인하면 별도 회원가입 없이
-          <br />
-          바로 메디링크를 이용할 수 있습니다.
-        </div>
       </div>
     </div>
   )

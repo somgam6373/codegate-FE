@@ -42,6 +42,22 @@
   margin-bottom: 36px;
 }
 
+.auth-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  border: 1px solid #e3e8e5;
+  border-radius: 13px;
+  font-size: 15px;
+  font-family: inherit;
+  outline: none;
+}
+
+.auth-input:focus {
+  border-color: #0c6b50;
+}
+
 .auth-kakao-btn {
   width: 100%;
   display: flex;

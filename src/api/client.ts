@@ -28,12 +28,6 @@ export function unwrapApiResponse<T>(body: ApiResponse<T>): T {
   return body.data
 }
 
-export interface ApiResponse<T> {
-  success: boolean
-  data: T
-  error: string | null
-}
-
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const token = localStorage.getItem('token')
   const res = await fetch(`${BASE_URL}${path}`, {
@@ -65,6 +59,10 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
       )
     }
     throw new ApiError('HTTP_ERROR', `${res.status} ${res.statusText}`)
+  }
+
+  if (!isApiResponse(body)) {
+    throw new ApiError('INVALID_RESPONSE', '서버 응답 형식이 올바르지 않습니다.')
   }
 
   return body as T

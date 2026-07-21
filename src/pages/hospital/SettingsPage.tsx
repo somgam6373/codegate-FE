@@ -1,25 +1,132 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { createHospitalSlot, getHospitalMe, updateHospitalMe } from '../../api/hospital'
+import { useToast } from '../../context/ToastContext'
 import { HospitalHeader } from './HospitalLayout'
-import {
-  buildCalendarCells,
-  defaultSubjects,
-  defaultWeeklyHours,
-  hospitalProfile,
-  weekdayLabels,
-  type ClinicSubject,
-  type WeeklyHours,
-} from './hospitalData'
+import { buildCalendarCells, weekdayLabels, type ClinicSubject, type WeeklyHours } from './hospitalData'
 
-function TimeModal({ day, onClose }: { day: number; onClose: () => void }) {
+const DAY_ORDER = ['월', '화', '수', '목', '금', '토', '일']
+
+function formatDate(year: number, month: number, day: number): string {
+  return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+}
+
+// 09:00~18:00 같은 운영 시간 범위를 슬롯 등록에 필요한 정시 startTime 목록으로 쪼갠다
+function hoursBetween(start: string, end: string): string[] {
+  const startHour = Number(start.split(':')[0])
+  const endHour = Number(end.split(':')[0])
+  const hours: string[] = []
+  for (let h = startHour; h < endHour; h++) hours.push(`${String(h).padStart(2, '0')}:00`)
+  return hours
+}
+
+// 요일 토글은 반복 설정이 아니라 "이번 주" 실제 날짜에 슬롯을 등록하는 용도라 이번 주 월~금 기준으로 계산한다
+function getDateForWeekdayThisWeek(day: string): string {
+  const idx = DAY_ORDER.indexOf(day)
+  const today = new Date()
+  const daysSinceMonday = today.getDay() === 0 ? 6 : today.getDay() - 1
+  const target = new Date(today)
+  target.setDate(today.getDate() - daysSinceMonday + idx)
+  return formatDate(target.getFullYear(), target.getMonth(), target.getDate())
+}
+
+async function registerSlotsForAllSubjects(subjects: ClinicSubject[], date: string, start: string, end: string) {
+  const hours = hoursBetween(start, end)
+  await Promise.all(
+    subjects.flatMap((s) => hours.map((startTime) => createHospitalSlot({ department: s.name, date, startTime }))),
+  )
+}
+
+function parseSubjects(raw: string): ClinicSubject[] {
+  return raw
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((name, i) => ({ id: `sub-${i}`, name }))
+}
+
+// "월-금 09:00-18:00" 같은 자유 텍스트를 요일별 운영 시간 표로 변환한다
+function parseAvailableTime(raw: string): WeeklyHours[] {
+  const timeMatch = raw.match(/(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/)
+  const [start, end] = timeMatch ? [timeMatch[1], timeMatch[2]] : ['09:00', '18:00']
+  const dayPart = (timeMatch ? raw.slice(0, timeMatch.index) : raw).trim()
+
+  const openDays = new Set<string>()
+  if (dayPart.includes('-')) {
+    const [from, to] = dayPart.split('-').map((s) => s.trim())
+    const fromIdx = DAY_ORDER.indexOf(from)
+    const toIdx = DAY_ORDER.indexOf(to)
+    if (fromIdx !== -1 && toIdx !== -1) {
+      for (let i = fromIdx; i <= toIdx; i++) openDays.add(DAY_ORDER[i])
+    }
+  } else {
+    dayPart.split(/[,\s]+/).forEach((d) => {
+      if (DAY_ORDER.includes(d)) openDays.add(d)
+    })
+  }
+
+  return DAY_ORDER.map((day) => ({
+    day,
+    open: openDays.has(day),
+    start: openDays.has(day) ? start : '-',
+    end: openDays.has(day) ? end : '-',
+  }))
+}
+
+function formatAvailableTime(hours: WeeklyHours[]): string {
+  const open = hours.filter((h) => h.open)
+  if (open.length === 0) return ''
+
+  const openDayIdx = open.map((h) => DAY_ORDER.indexOf(h.day)).sort((a, b) => a - b)
+  const isContiguous = openDayIdx.every((idx, i) => idx === openDayIdx[0] + i)
+  const dayLabel =
+    isContiguous && openDayIdx.length > 1
+      ? `${DAY_ORDER[openDayIdx[0]]}-${DAY_ORDER[openDayIdx[openDayIdx.length - 1]]}`
+      : open.map((h) => h.day).join(',')
+
+  return `${dayLabel} ${open[0].start}-${open[0].end}`
+}
+
+function TimeModal({
+  year,
+  month,
+  day,
+  subjects,
+  onClose,
+}: {
+  year: number
+  month: number
+  day: number
+  subjects: ClinicSubject[]
+  onClose: () => void
+}) {
+  const showToast = useToast()
   const [available, setAvailable] = useState(true)
   const [start, setStart] = useState('09:00')
   const [end, setEnd] = useState('18:00')
+  const [saving, setSaving] = useState(false)
+
+  async function handleSave() {
+    if (!available) {
+      onClose()
+      return
+    }
+    setSaving(true)
+    try {
+      await registerSlotsForAllSubjects(subjects, formatDate(year, month, day), start, end)
+      showToast('진료 가능 시간이 등록되었어요', 'success')
+      onClose()
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : '슬롯 등록에 실패했어요', 'error')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
     <div className="h-modal-backdrop" onClick={onClose}>
       <div className="h-modal" onClick={(e) => e.stopPropagation()}>
         <div className="h-modal-header">
-          <div className="h-modal-title">7월 {day}일 진료 시간</div>
+          <div className="h-modal-title">{month + 1}월 {day}일 진료 시간</div>
           <button type="button" className="h-modal-close" onClick={onClose} aria-label="닫기">
             ✕
           </button>
@@ -42,6 +149,7 @@ function TimeModal({ day, onClose }: { day: number; onClose: () => void }) {
             <input
               className="h-field-input"
               type="time"
+              step={3600}
               value={start}
               onChange={(e) => setStart(e.target.value)}
               disabled={!available}
@@ -52,6 +160,7 @@ function TimeModal({ day, onClose }: { day: number; onClose: () => void }) {
             <input
               className="h-field-input"
               type="time"
+              step={3600}
               value={end}
               onChange={(e) => setEnd(e.target.value)}
               disabled={!available}
@@ -59,11 +168,11 @@ function TimeModal({ day, onClose }: { day: number; onClose: () => void }) {
           </div>
         </div>
         <div className="h-modal-actions">
-          <button type="button" className="h-btn h-btn-ghost" onClick={onClose}>
+          <button type="button" className="h-btn h-btn-ghost" onClick={onClose} disabled={saving}>
             취소
           </button>
-          <button type="button" className="h-btn h-btn-primary" onClick={onClose}>
-            저장
+          <button type="button" className="h-btn h-btn-primary" onClick={handleSave} disabled={saving}>
+            {saving ? '등록 중...' : '저장'}
           </button>
         </div>
       </div>
@@ -72,18 +181,32 @@ function TimeModal({ day, onClose }: { day: number; onClose: () => void }) {
 }
 
 function SettingsPage() {
-  const cells = useMemo(() => buildCalendarCells(), [])
+  const showToast = useToast()
+  const today = useMemo(() => new Date(), [])
+  const cells = useMemo(() => buildCalendarCells(today.getFullYear(), today.getMonth()), [today])
   const [modalDay, setModalDay] = useState<number | null>(null)
 
-  const [name, setName] = useState(hospitalProfile.name)
-  const [phone, setPhone] = useState(hospitalProfile.phone)
-  const [address, setAddress] = useState(hospitalProfile.address)
+  const [name, setName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [address, setAddress] = useState('')
 
-  const [subjects, setSubjects] = useState<ClinicSubject[]>(defaultSubjects)
+  const [subjects, setSubjects] = useState<ClinicSubject[]>([])
   const [addingSubject, setAddingSubject] = useState(false)
   const [newSubject, setNewSubject] = useState('')
 
-  const [weeklyHours, setWeeklyHours] = useState<WeeklyHours[]>(defaultWeeklyHours)
+  const [weeklyHours, setWeeklyHours] = useState<WeeklyHours[]>([])
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    getHospitalMe()
+      .then((me) => {
+        setName(me.hospitalName)
+        setAddress(me.hospitalLocation)
+        setSubjects(parseSubjects(me.medicalSubjects))
+        setWeeklyHours(parseAvailableTime(me.availableTime))
+      })
+      .catch((err) => showToast(err instanceof Error ? err.message : '병원 정보 조회에 실패했어요', 'error'))
+  }, [showToast])
 
   function removeSubject(id: string) {
     setSubjects((prev) => prev.filter((s) => s.id !== id))
@@ -98,14 +221,51 @@ function SettingsPage() {
     setAddingSubject(false)
   }
 
-  function toggleDay(day: string) {
+  async function toggleDay(day: string) {
+    let updated: WeeklyHours | undefined
     setWeeklyHours((prev) =>
-      prev.map((h) => (h.day === day ? { ...h, open: !h.open } : h)),
+      prev.map((h) => {
+        if (h.day !== day) return h
+        const open = !h.open
+        updated = {
+          day,
+          open,
+          start: open && h.start === '-' ? '09:00' : h.start,
+          end: open && h.end === '-' ? '18:00' : h.end,
+        }
+        return updated
+      }),
     )
+
+    if (!updated?.open || DAY_ORDER.indexOf(day) >= 5) return
+    try {
+      const date = getDateForWeekdayThisWeek(day)
+      await registerSlotsForAllSubjects(subjects, date, updated.start, updated.end)
+      showToast(`이번 주 ${day}요일 진료 시간이 등록되었어요`, 'success')
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : '슬롯 등록에 실패했어요', 'error')
+    }
   }
 
   function updateHour(day: string, field: 'start' | 'end', value: string) {
     setWeeklyHours((prev) => prev.map((h) => (h.day === day ? { ...h, [field]: value } : h)))
+  }
+
+  async function handleSave() {
+    setSaving(true)
+    try {
+      await updateHospitalMe({
+        hospitalName: name,
+        hospitalLocation: address,
+        availableTime: formatAvailableTime(weeklyHours),
+        medicalSubjects: subjects.map((s) => s.name).join(', '),
+      })
+      showToast('병원 정보가 저장되었어요', 'success')
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : '병원 정보 저장에 실패했어요', 'error')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -123,7 +283,12 @@ function SettingsPage() {
               </div>
               <div>
                 <div className="h-field-label">대표 전화번호</div>
-                <input className="h-field-input" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                <input
+                  className="h-field-input"
+                  placeholder="전화번호를 입력하세요"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
               </div>
               <div>
                 <div className="h-field-label">주소</div>
@@ -231,9 +396,23 @@ function SettingsPage() {
             </div>
           </div>
         </div>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
+          <button type="button" className="h-btn h-btn-primary" onClick={handleSave} disabled={saving}>
+            {saving ? '저장 중...' : '저장'}
+          </button>
+        </div>
       </div>
 
-      {modalDay != null && <TimeModal day={modalDay} onClose={() => setModalDay(null)} />}
+      {modalDay != null && (
+        <TimeModal
+          year={today.getFullYear()}
+          month={today.getMonth()}
+          day={modalDay}
+          subjects={subjects}
+          onClose={() => setModalDay(null)}
+        />
+      )}
     </>
   )
 }
