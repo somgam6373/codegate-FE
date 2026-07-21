@@ -80,10 +80,10 @@ export function getPatientReservations(params: GetPatientReservationsParams = {}
 
   const qs = query.toString()
   return api<ApiResponse<PageResponse<PatientReservation>>>(`/api/v1/patient/reservations${qs ? `?${qs}` : ''}`).then(
-    (res) => res.data,
+    unwrapApiResponse,
   )
 }
 
 export function getPatientReservation(reservationId: number) {
-  return api<ApiResponse<PatientReservation>>(`/api/v1/patient/reservations/${reservationId}`).then((res) => res.data)
+  return api<ApiResponse<PatientReservation>>(`/api/v1/patient/reservations/${reservationId}`).then(unwrapApiResponse)
 }

@@ -1,5 +1,7 @@
-import { api, unwrapApiResponse } from './client'
+import { ApiError, api, unwrapApiResponse } from './client'
 import type { ApiResponse } from './client'
+
+const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
 
 export interface HospitalMe {
   hospitalId: number
@@ -151,4 +153,79 @@ export function getReservationPatientInfo(reservationId: number) {
   return api<ApiResponse<ReservationPatientInfo>>(
     `/api/v1/hospital/reservations/${reservationId}/patient`,
   ).then(unwrapApiResponse)
+}
+
+export type HospitalMedicalFileType = 'CHECKUP_RESULT' | 'OPINION_LETTER' | 'CT' | 'MRI' | 'XRAY'
+export type HospitalMedicalFileStatus = 'UPLOADED' | 'OCR_PENDING' | 'OCR_PROCESSING' | 'OCR_COMPLETED' | 'OCR_FAILED'
+export type HospitalMedicalFileOcrStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED'
+
+export interface HospitalMedicalFile {
+  id: number
+  type: HospitalMedicalFileType
+  status: HospitalMedicalFileStatus
+  originalFileName: string
+  contentType: string | null
+  fileSize: number
+  createdAt: string
+}
+
+export interface HospitalMedicalFileOcrResult {
+  medicalFileId: number
+  status: HospitalMedicalFileOcrStatus
+  extractedText: string | null
+  summary: string | null
+  recommendedFood: string | null
+  recommendedExercise: string | null
+  bloodPressureScorePercent: number | null
+  bloodSugarScorePercent: number | null
+  gammaGtpScorePercent: number | null
+  errorMessage: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export function getReservationMedicalFiles(reservationId: number) {
+  return api<ApiResponse<HospitalMedicalFile[]>>(
+    `/api/v1/hospital/reservations/${reservationId}/medical-files`,
+  ).then(unwrapApiResponse)
+}
+
+export function getReservationMedicalFileOcrResult(reservationId: number, medicalFileId: number) {
+  return api<ApiResponse<HospitalMedicalFileOcrResult>>(
+    `/api/v1/hospital/reservations/${reservationId}/medical-files/${medicalFileId}/ocr-result`,
+  ).then(unwrapApiResponse)
+}
+
+export async function getReservationMedicalFileContent(reservationId: number, medicalFileId: number): Promise<Blob> {
+  const token = localStorage.getItem('token')
+  const res = await fetch(
+    `${BASE_URL}/api/v1/hospital/reservations/${reservationId}/medical-files/${medicalFileId}/content`,
+    {
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    },
+  )
+
+  if (res.ok) {
+    return res.blob()
+  }
+
+  const text = await res.text()
+  if (text) {
+    try {
+      const body = JSON.parse(text) as ApiResponse<unknown>
+      if (body && typeof body.success === 'boolean') {
+        throw new ApiError(
+          body.error?.code ?? 'API_ERROR',
+          body.error?.message ?? '파일을 불러오지 못했습니다.',
+          body.error?.details,
+        )
+      }
+    } catch (error) {
+      if (error instanceof ApiError) throw error
+    }
+  }
+
+  throw new ApiError('HTTP_ERROR', `${res.status} ${res.statusText}`)
 }
