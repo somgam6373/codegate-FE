@@ -1,0 +1,72 @@
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #0c6b50, #0a4d3b);
+  font-family: 'IBM Plex Sans KR', system-ui, sans-serif;
+  padding: 24px;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 360px;
+  background: #fff;
+  border-radius: 24px;
+  padding: 44px 36px 36px;
+  box-shadow: 0 30px 70px -20px rgba(0, 0, 0, 0.35);
+  text-align: center;
+}
+
+.auth-mark {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: #0c6b50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 18px;
+}
+
+.auth-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: #14231d;
+}
+
+.auth-subtitle {
+  font-size: 17px;
+  color: #7c8c83;
+  margin-top: 6px;
+  margin-bottom: 36px;
+}
+
+.auth-kakao-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: #fee500;
+  color: #191600;
+  font-size: 18px;
+  font-weight: 700;
+  padding: 14px 0;
+  border-radius: 13px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.auth-kakao-btn:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.auth-hint {
+  font-size: 14px;
+  color: #9aa8a0;
+  margin-top: 18px;
+  line-height: 1.6;
+}
