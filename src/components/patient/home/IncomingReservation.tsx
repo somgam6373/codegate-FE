@@ -34,7 +34,7 @@ function IncomingReservation() {
 
     getPatientReservations().then((result) => {
       const upcoming = result.content
-        .filter((r) => (r.status === 'REQUESTED' || r.status === 'APPROVED') && new Date(r.date) >= today)
+        .filter((r) => r.status === 'APPROVED' && new Date(r.date) >= today)
         .sort((a, b) => (a.date === b.date ? a.startTime.localeCompare(b.startTime) : a.date.localeCompare(b.date)))
       setReservation(upcoming[0] ?? null)
     })

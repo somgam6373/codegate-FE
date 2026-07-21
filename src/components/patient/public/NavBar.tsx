@@ -54,7 +54,7 @@ function NavBar() {
         const active = pathname === to
         const className = `flex cursor-pointer flex-col items-center gap-1 text-[11px] font-semibold transition-colors duration-200 active:scale-95 ${active ? 'text-primary' : 'text-ink-faint'}`
         return (
-          <Link key={key} to={to} className={className}>
+          <Link key={key} to={to} className={className} aria-current={active ? 'page' : undefined}>
             <span
               className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors duration-200 ${active ? 'bg-primary-bg' : 'bg-transparent'}`}
             >
