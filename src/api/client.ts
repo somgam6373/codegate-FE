@@ -1,8 +1,19 @@
 const BASE_URL = import.meta.env.VITE_API_BASE_URL
 
+export interface ApiResponse<T> {
+  success: boolean
+  data: T
+  error: string | null
+}
+
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = localStorage.getItem('token')
   const res = await fetch(`${BASE_URL}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...init?.headers,
+    },
     ...init,
   })
 

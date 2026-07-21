@@ -1,14 +1,9 @@
 import { api } from './client'
+import type { ApiResponse } from './client'
 
 export interface MetaItem {
   code: string
   label: string
-}
-
-interface ApiResponse<T> {
-  success: boolean
-  data: T
-  error: string | null
 }
 
 export function getDistricts() {

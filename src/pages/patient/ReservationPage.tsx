@@ -1,11 +1,18 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import SelectHospital from '../../components/patient/reservation/makeReservation/SelectHospital'
 import SearchResult from '../../components/patient/reservation/makeReservation/SearchResult'
 import ReservationSearchList from '../../components/patient/reservation/viewReservation/ReservationSearchList'
 import NavBar from '../../components/patient/public/NavBar'
+import { searchHospitals } from '../../api/hospitals'
+import type { HospitalSearchHospital, SearchHospitalsParams } from '../../api/hospitals'
 
 function ReservationPage() {
   const [tab, setTab] = useState<'make' | 'view'>('make')
+  const [hospitals, setHospitals] = useState<HospitalSearchHospital[]>([])
+
+  const handleFilterChange = useCallback((params: SearchHospitalsParams) => {
+    searchHospitals(params).then((result) => setHospitals(result.hospitals))
+  }, [])
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-[480px] flex-col bg-app-bg">
@@ -35,8 +42,8 @@ function ReservationPage() {
 
         {tab === 'make' ? (
           <div className="flex flex-col gap-4">
-            <SelectHospital />
-            <SearchResult />
+            <SelectHospital onFilterChange={handleFilterChange} />
+            <SearchResult hospitals={hospitals} />
           </div>
         ) : (
           <ReservationSearchList />

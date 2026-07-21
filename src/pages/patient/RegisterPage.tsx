@@ -50,7 +50,7 @@ function RegisterPage() {
         birthDate: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
         residentRegistrationNumber: rrn,
       })
-      auth.login(result)
+      auth.login(result, name)
       navigate('/register/health', { state: { name, gender, year, month, day, region } })
     } catch (err) {
       showToast(err instanceof Error ? err.message : '회원가입에 실패했어요', 'error')
