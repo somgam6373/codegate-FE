@@ -17,7 +17,11 @@ function RegisterPage() {
   const location = useLocation()
   const auth = useAuth()
   const showToast = useToast()
-  const { code, redirectUri } = (location.state ?? {}) as { code?: string; redirectUri?: string }
+  const { code, redirectUri, signupToken } = (location.state ?? {}) as {
+    code?: string
+    redirectUri?: string
+    signupToken?: string
+  }
   const [name, setName] = useState('')
   const [gender, setGender] = useState<'male' | 'female' | null>(null)
   const [year, setYear] = useState(1985)
@@ -27,11 +31,11 @@ function RegisterPage() {
   const [rrn, setRrn] = useState('')
 
   useEffect(() => {
-    if (!code || !redirectUri) navigate('/login', { replace: true })
-  }, [code, redirectUri, navigate])
+    if (!signupToken && (!code || !redirectUri)) navigate('/login', { replace: true })
+  }, [code, redirectUri, signupToken, navigate])
 
   async function handleNext() {
-    if (!code || !redirectUri) return
+    if (!signupToken && (!code || !redirectUri)) return
     if (!name || !gender || !rrn) {
       showToast('이름, 성별, 주민등록번호를 입력해 주세요', 'error')
       return
@@ -40,8 +44,9 @@ function RegisterPage() {
       const result = await kakaoSignup({
         code,
         redirectUri,
+        signupToken,
         name,
-        gender,
+        gender: gender === 'male' ? 'MALE' : 'FEMALE',
         birthDate: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
         residentRegistrationNumber: rrn,
       })

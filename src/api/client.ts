@@ -5,6 +5,30 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
     headers: { 'Content-Type': 'application/json', ...init?.headers },
     ...init,
   })
-  if (!res.ok) throw new Error(`${res.status} ${await res.text()}`)
-  return res.json()
+
+  const text = await res.text()
+  let body: unknown = null
+  if (text) {
+    try {
+      body = JSON.parse(text)
+    } catch {
+      if (!res.ok) throw new Error(`${res.status} ${text}`)
+      throw new Error('서버 응답 형식이 올바르지 않습니다.')
+    }
+  }
+
+  if (!res.ok && !isApiResponse(body)) {
+    throw new Error(`${res.status} ${text}`)
+  }
+
+  return body as T
+}
+
+function isApiResponse(body: unknown): body is { success: boolean } {
+  return (
+    typeof body === 'object' &&
+    body !== null &&
+    'success' in body &&
+    typeof (body as { success: unknown }).success === 'boolean'
+  )
 }

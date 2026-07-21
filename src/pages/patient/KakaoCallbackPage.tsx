@@ -28,7 +28,8 @@ function KakaoCallbackPage() {
       })
       .catch((err) => {
         if (err instanceof ApiError && err.code === 'PATIENT_SIGNUP_REQUIRED') {
-          navigate('/register', { replace: true, state: { code, redirectUri } })
+          const signupToken = typeof err.details?.signupToken === 'string' ? err.details.signupToken : undefined
+          navigate('/register', { replace: true, state: { signupToken } })
         } else {
           showToast(err instanceof Error ? err.message : '로그인에 실패했어요', 'error')
           navigate('/login', { replace: true })

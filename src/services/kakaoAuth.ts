@@ -2,35 +2,46 @@ import { api } from '../api/client'
 
 interface ApiResponse<T> {
   success: boolean
-  data: T
-  error: { code: string; message: string } | null
+  data: T | null
+  error: { code: string; message: string; details?: Record<string, unknown> } | null
 }
 
 export class ApiError extends Error {
   code: string
-  constructor(code: string, message: string) {
+  details?: Record<string, unknown>
+
+  constructor(code: string, message: string, details?: Record<string, unknown>) {
     super(message)
     this.code = code
+    this.details = details
   }
 }
 
 async function unwrap<T>(res: Promise<ApiResponse<T>>): Promise<T> {
   const body = await res
-  if (!body.success) throw new ApiError(body.error!.code, body.error!.message)
+  if (!body.success || body.data === null) {
+    throw new ApiError(
+      body.error?.code ?? 'API_ERROR',
+      body.error?.message ?? '요청 처리에 실패했습니다.',
+      body.error?.details,
+    )
+  }
   return body.data
 }
 
 export interface LoginResult {
-  token: string
+  accessToken: string
+  tokenType: string
   role: string
-  userId: string
+  userId: number
 }
 
 export interface SignupPayload {
-  code: string
-  redirectUri: string
+  code?: string
+  redirectUri?: string
+  signupToken?: string
   name: string
-  gender: 'male' | 'female'
+  gender: 'MALE' | 'FEMALE'
   birthDate: string
   residentRegistrationNumber: string
 }
