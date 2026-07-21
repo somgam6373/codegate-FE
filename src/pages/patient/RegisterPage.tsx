@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import { kakaoSignup } from '../../services/kakaoAuth'
+import { PrimaryButton } from '../../components/patient/ui/Button'
 
 const YEARS = Array.from({ length: 71 }, (_, i) => 2010 - i)
 const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1)
@@ -166,13 +167,7 @@ function RegisterPage() {
       </main>
 
       <div className="px-6.5 pt-3.5 pb-[calc(22px+env(safe-area-inset-bottom))]">
-        <button
-          type="button"
-          onClick={handleNext}
-          className="w-full rounded-2xl bg-primary py-[17px] text-base font-extrabold text-white"
-        >
-          다음
-        </button>
+        <PrimaryButton onClick={handleNext}>다음</PrimaryButton>
       </div>
     </div>
   )

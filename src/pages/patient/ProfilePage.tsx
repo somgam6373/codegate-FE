@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import NavBar from '../../components/patient/public/NavBar'
+import Card from '../../components/patient/ui/Card'
+import { getPatientMe, updatePatientMe } from '../../api/patients'
+import type { UpdatePatientMeRequest } from '../../api/patients'
 import { useAuth } from '../../context/AuthContext'
+import { useToast } from '../../context/ToastContext'
 
 const YEARS = Array.from({ length: 71 }, (_, i) => 2010 - i)
 const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1)
@@ -53,7 +57,8 @@ function ChipGroup({
 
 function ProfilePage() {
     const navigate = useNavigate()
-    const { name: authName, token } = useAuth() // token 필드명은 실제 AuthContext에 맞게 확인
+    const { name: authName } = useAuth()
+    const showToast = useToast()
     const [editing, setEditing] = useState(false)
     const [saving, setSaving] = useState(false)
     const [name, setName] = useState(authName ?? '')
@@ -66,19 +71,8 @@ function ProfilePage() {
     const [conditions, setConditions] = useState<string[]>([])
 
     useEffect(() => {
-        fetch('/api/v1/patients/me', {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        })
-            .then((res) => res.json())
-            .then((res) => {
-                if (!res.success) {
-                    console.error('프로필 조회 실패', res.error)
-                    return
-                }
-                const { name, gender, birthDate, medications, diseases } = res.data
-
+        getPatientMe()
+            .then(({ name, gender, birthDate, medications, diseases }) => {
                 setName(name ?? '')
                 setGender(gender === 'MALE' ? 'male' : gender === 'FEMALE' ? 'female' : null)
 
@@ -92,8 +86,8 @@ function ProfilePage() {
                 setMedications(medications ?? [])
                 setConditions(diseases ?? [])
             })
-            .catch((err) => console.error('프로필 조회 실패', err))
-    }, [token])
+            .catch((err) => showToast(err instanceof Error ? err.message : '프로필 조회에 실패했어요', 'error'))
+    }, [showToast])
 
     const handleSave = async () => {
         // 생년월일은 세 값이 모두 있을 때만 보냄 (하나라도 없으면 필드 생략 -> 기존 값 유지)
@@ -101,7 +95,7 @@ function ProfilePage() {
             ? `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
             : undefined
 
-        const payload: Record<string, unknown> = {
+        const payload: UpdatePatientMeRequest = {
             name,
             gender: gender === 'male' ? 'MALE' : gender === 'female' ? 'FEMALE' : undefined,
             birthDate,
@@ -111,22 +105,7 @@ function ProfilePage() {
 
         setSaving(true)
         try {
-            const res = await fetch('/api/v1/patients/me', {
-                method: 'POST',
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(payload),
-            })
-            const json = await res.json()
-
-            if (!json.success) {
-                alert(json.error?.message ?? '수정에 실패했습니다.')
-                return
-            }
-
-            const data = json.data
+            const data = await updatePatientMe(payload)
             setName(data.name ?? '')
             setGender(data.gender === 'MALE' ? 'male' : data.gender === 'FEMALE' ? 'female' : null)
             if (data.birthDate) {
@@ -138,9 +117,9 @@ function ProfilePage() {
             setMedications(data.medications ?? [])
             setConditions(data.diseases ?? [])
             setEditing(false)
+            showToast('저장했어요', 'success')
         } catch (err) {
-            console.error('프로필 수정 실패', err)
-            alert('수정 중 오류가 발생했습니다.')
+            showToast(err instanceof Error ? err.message : '수정 중 오류가 발생했어요', 'error')
         } finally {
             setSaving(false)
         }
@@ -201,7 +180,7 @@ function ProfilePage() {
 
                 <h2 className="mt-1.5 mb-2.5 px-0.5 text-sm font-extrabold text-ink">기본 정보</h2>
                 {editing ? (
-                    <div className="mb-5 rounded-[22px] border border-black/[0.04] bg-white p-4.5 shadow-[0_10px_24px_-18px_rgba(20,35,29,0.35)]">
+                    <Card className="mb-5">
                         <div className="mb-1.5 text-xs font-bold text-ink-muted">이름</div>
                         <input
                             type="text"
@@ -282,7 +261,7 @@ function ProfilePage() {
                                 </option>
                             ))}
                         </select>
-                    </div>
+                    </Card>
                 ) : (
                     <div className="mb-5 rounded-[22px] border border-black/[0.04] bg-white px-4.5 shadow-[0_10px_24px_-18px_rgba(20,35,29,0.35)]">
                         {basicInfoRows.map(([label, value], i) => (

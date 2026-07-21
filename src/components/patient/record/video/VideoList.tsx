@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { MedicalFile, MedicalFileStatus, MedicalFileType } from '../../../../api/medicalFiles'
 import RecordMediaSheet from '../RecordMediaSheet'
+import ListRow from '../../ui/ListRow'
 
 interface VideoListProps {
   records: MedicalFile[]
@@ -58,34 +59,15 @@ function VideoList({ records, loading = false }: VideoListProps) {
         <p className="rounded-[18px] bg-white p-5 text-center text-sm font-semibold text-ink-muted">아직 등록된 영상 자료가 없습니다.</p>
       ) : (
         <div className="flex flex-col gap-3">
-          {records.map((r) => {
-            const label = TYPE_LABELS[r.type]
-            return (
-              <button
-                key={r.id}
-                type="button"
-                onClick={() => setSelected(r)}
-                className="flex cursor-pointer items-center gap-3.5 rounded-[22px] border border-black/[0.04] bg-white p-3.5 text-left shadow-[0_10px_24px_-18px_rgba(20,35,29,0.35)] transition-all duration-200 hover:shadow-[0_14px_28px_-16px_rgba(20,35,29,0.4)] active:scale-[0.99]"
-              >
-                <span
-                  className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[13px] text-center font-mono text-[10px] leading-tight font-semibold text-black/40"
-                  style={{
-                    backgroundImage:
-                      'repeating-linear-gradient(135deg, rgba(20,35,29,.05) 0 8px, transparent 8px 16px)',
-                  }}
-                >
-                  {label}
-                </span>
-                <div className="flex-1">
-                  <p className="text-sm font-bold text-ink">{displayName(r.originalFileName)}</p>
-                  <p className="mt-0.5 text-xs text-ink-muted">{recordMeta(r)}</p>
-                  <div className="mt-1.5">
-                    <StatusBadge status={r.status} />
-                  </div>
-                </div>
-              </button>
-            )
-          })}
+          {records.map((r) => (
+            <ListRow
+              key={r.id}
+              onClick={() => setSelected(r)}
+              title={displayName(r.originalFileName)}
+              subtitle={recordMeta(r)}
+              badge={<StatusBadge status={r.status} />}
+            />
+          ))}
         </div>
       )}
 

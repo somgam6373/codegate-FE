@@ -1,4 +1,5 @@
 import { useRef } from 'react'
+import { PrimaryButton } from '../../ui/Button'
 
 interface TextUploadProps {
   uploading?: boolean
@@ -33,14 +34,9 @@ function TextUpload({ uploading = false, onUpload }: TextUploadProps) {
       </div>
       <p className="text-base font-bold text-ink">건강검진결과지 업로드</p>
       <p className="mt-1.5 text-[13px] text-ink-muted">PDF 파일만 지원</p>
-      <button
-        type="button"
-        onClick={() => inputRef.current?.click()}
-        disabled={uploading}
-        className="mt-4 cursor-pointer rounded-xl bg-primary px-5 py-3 text-sm font-extrabold text-white transition-all duration-200 hover:bg-primary-deep active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-ink-faint"
-      >
+      <PrimaryButton onClick={() => inputRef.current?.click()} disabled={uploading} className="mt-4">
         {uploading ? '업로드 중...' : 'PDF 선택'}
-      </button>
+      </PrimaryButton>
       <input ref={inputRef} type="file" accept=".pdf,application/pdf" className="hidden" onChange={handleChange} />
     </div>
   )

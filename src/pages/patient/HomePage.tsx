@@ -15,7 +15,7 @@ function HomePage() {
             <p className="text-sm font-medium text-ink-soft">
               {new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}
             </p>
-            <h1 className="mt-1 text-2xl font-bold text-ink">안녕하세요, {name ?? '회원'}님</h1>
+            <h1 className="mt-1 text-[26px] font-extrabold tracking-tight text-ink">안녕하세요, {name ?? '회원'}님</h1>
           </div>
           <div className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-2xl bg-primary-bg shadow-[0_6px_14px_-8px_rgba(11,107,80,0.35)]">
             <img src="/bear.png" alt={name ?? '회원'} className="h-full w-full object-contain" />
@@ -24,12 +24,12 @@ function HomePage() {
 
         <IncomingReservation />
 
-        <section className="mt-[18px] flex flex-col gap-4">
+        <section className="mt-6 flex flex-col gap-4">
           <HomeButton1 />
           <HomeButton2 />
         </section>
 
-        <div className="mt-5">
+        <div className="mt-6">
           <SummarizeAI />
         </div>
       </main>

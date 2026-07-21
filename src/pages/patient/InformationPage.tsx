@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../../context/AuthContext'
+import { updatePatientMe } from '../../api/patients'
 import { useToast } from '../../context/ToastContext'
+import { PrimaryButton } from '../../components/patient/ui/Button'
 
 const MEDICATIONS = ['고혈압약', '당뇨약', '고지혈증약', '갑상선약', '항응고제', '진통제', '없음']
 const CONDITIONS = ['고혈압', '당뇨', '고지혈증', '심장질환', '갑상선질환', '관절염', '천식', '없음']
@@ -46,7 +47,6 @@ function ChipGroup({
 
 function InformationPage() {
   const navigate = useNavigate()
-  const { token } = useAuth()
   const showToast = useToast()
   const [medications, setMedications] = useState<string[]>([])
   const [conditions, setConditions] = useState<string[]>([])
@@ -55,19 +55,7 @@ function InformationPage() {
   async function handleComplete() {
     setSubmitting(true)
     try {
-      const res = await fetch('/api/v1/patients/me', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ medications, diseases: conditions }),
-      })
-      const json = await res.json()
-      if (!json.success) {
-        showToast(json.error?.message ?? '저장에 실패했어요', 'error')
-        return
-      }
+      await updatePatientMe({ medications, diseases: conditions })
       navigate('/home')
     } catch (err) {
       showToast(err instanceof Error ? err.message : '저장에 실패했어요', 'error')
@@ -113,14 +101,9 @@ function InformationPage() {
       </main>
 
       <div className="px-6.5 pt-3.5 pb-[calc(22px+env(safe-area-inset-bottom))]">
-        <button
-          type="button"
-          onClick={handleComplete}
-          disabled={submitting}
-          className="w-full rounded-2xl bg-primary py-[17px] text-base font-extrabold text-white disabled:opacity-50"
-        >
+        <PrimaryButton onClick={handleComplete} disabled={submitting}>
           {submitting ? '저장 중...' : '완료'}
-        </button>
+        </PrimaryButton>
       </div>
     </div>
   )

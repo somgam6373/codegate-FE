@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getPatientReservations } from '../../../api/reservations'
 import type { PatientReservation } from '../../../api/reservations'
+import Card from '../ui/Card'
 
 function toDday(dateStr: string) {
   const target = new Date(dateStr)
@@ -42,14 +43,10 @@ function IncomingReservation() {
 
   if (!reservation) {
     return (
-      <button
-        type="button"
-        onClick={() => navigate('/reservation')}
-        className="w-full cursor-pointer rounded-[22px] border border-black/[0.04] bg-white p-5 text-left shadow-[0_10px_24px_-18px_rgba(20,35,29,0.35)] transition-all duration-200 active:scale-[0.98]"
-      >
+      <Card as="button" onClick={() => navigate('/reservation')}>
         <span className="text-sm font-bold text-ink">다가오는 예약이 없어요</span>
         <p className="mt-0.5 text-xs text-ink-muted">지금 병원을 예약해 보세요</p>
-      </button>
+      </Card>
     )
   }
 
@@ -64,7 +61,7 @@ function IncomingReservation() {
           {toDday(reservation.date)}
         </span>
       </div>
-      <p className="mt-3 text-xl font-bold">
+      <p className="mt-3 text-xl font-extrabold tracking-tight">
         {reservation.hospitalName} · {reservation.department}
       </p>
       <p className="mt-0.5 text-sm text-[#d5efe4]">

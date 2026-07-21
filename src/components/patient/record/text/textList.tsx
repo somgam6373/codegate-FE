@@ -62,19 +62,8 @@ function TextList({ records, loading = false }: TextListProps) {
                 onClick={() => setSelected(r)}
                 className="flex flex-1 cursor-pointer items-center gap-3.5 text-left"
               >
-                <span
-                  className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[13px] text-center font-mono text-[10px] leading-tight font-semibold text-black/40"
-                  style={{
-                    backgroundImage:
-                      'repeating-linear-gradient(135deg, rgba(20,35,29,.05) 0 8px, transparent 8px 16px)',
-                  }}
-                >
-                  검진
-                  <br />
-                  결과지
-                </span>
                 <div className="flex-1">
-                  <p className="text-sm font-bold text-ink">{displayName(r.originalFileName)}</p>
+                  <p className="text-base font-extrabold text-ink">{displayName(r.originalFileName)}</p>
                   <p className="mt-0.5 text-xs text-ink-muted">{recordMeta(r)}</p>
                   <div className="mt-1.5">
                     <StatusBadge status={r.status} />

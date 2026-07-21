@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { getMedicalFileOcrResult, type MedicalFileOcrResult } from '../../api/medicalFiles'
 import BottomSheet from '../../components/patient/public/BottomSheet'
+import Card from '../../components/patient/ui/Card'
+import SectionTitle from '../../components/patient/ui/SectionTitle'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 
@@ -145,7 +147,7 @@ function AiReportPage() {
       </div>
 
       <main className="flex-1 px-5.5 pt-4.5 pb-6">
-        <div className="mb-3.5 rounded-[22px] border border-black/[0.04] bg-white p-4.5 shadow-[0_10px_24px_-18px_rgba(20,35,29,0.35)]">
+        <Card className="mb-3.5">
           <p className="mb-3 text-sm font-bold text-ink">종합 위험도</p>
           <div
             className="relative h-3 rounded-full"
@@ -161,9 +163,9 @@ function AiReportPage() {
             <span className="text-[#c98a1e]">보통</span>
             <span>위험</span>
           </div>
-        </div>
+        </Card>
 
-        <h2 className="mt-1.5 mb-3 px-0.5 text-[15px] font-extrabold text-ink">주요 수치 · 평균 대비 나쁨 정도</h2>
+        <SectionTitle>주요 수치 · 평균 대비 나쁨 정도</SectionTitle>
         <div className="flex flex-col gap-3">
           {metrics.map((m) => (
             <MetricCard key={m.label} metric={m} />
@@ -171,18 +173,18 @@ function AiReportPage() {
         </div>
 
         <div className="mt-4 flex gap-3">
-          <div className="flex-1 rounded-[22px] border border-black/[0.04] bg-white p-4 shadow-[0_10px_24px_-18px_rgba(20,35,29,0.35)]">
+          <Card padding="sm" className="flex-1">
             <p className="mb-2 text-[13px] font-bold text-primary-text">식단</p>
             <p className="text-[13px] leading-relaxed text-[#2b3a33]">
               {result?.recommendedFood ?? '분석 완료 후 추천 식단이 표시됩니다.'}
             </p>
-          </div>
-          <div className="flex-1 rounded-[22px] border border-black/[0.04] bg-white p-4 shadow-[0_10px_24px_-18px_rgba(20,35,29,0.35)]">
+          </Card>
+          <Card padding="sm" className="flex-1">
             <p className="mb-2 text-[13px] font-bold text-primary-text">운동</p>
             <p className="text-[13px] leading-relaxed text-[#2b3a33]">
               {result?.recommendedExercise ?? '분석 완료 후 추천 운동이 표시됩니다.'}
             </p>
-          </div>
+          </Card>
         </div>
 
         <div className="mt-4 rounded-2xl bg-primary-deep p-4.5 text-white shadow-[0_14px_30px_-16px_rgba(11,107,80,0.55)]">
@@ -268,7 +270,7 @@ function MetricCard({ metric }: { metric: Metric }) {
   const note = percent === null ? 'OCR 텍스트에서 값을 찾지 못했습니다.' : averageNote(percent)
 
   return (
-    <div className="rounded-[22px] border border-black/[0.04] bg-white p-4.5 shadow-[0_10px_24px_-18px_rgba(20,35,29,0.35)]">
+    <Card>
       <div className="mb-2 flex justify-between">
         <span className="text-sm font-bold text-ink">{metric.label}</span>
         <span className="text-sm font-extrabold" style={{ color }}>
@@ -282,7 +284,7 @@ function MetricCard({ metric }: { metric: Metric }) {
       <p className="mt-1.5 text-[11px] font-bold" style={{ color }}>
         {note}
       </p>
-    </div>
+    </Card>
   )
 }
 

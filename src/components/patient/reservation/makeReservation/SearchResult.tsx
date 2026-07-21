@@ -3,6 +3,7 @@ import type { HospitalSearchHospital, HospitalSearchSlot } from '../../../../api
 import { createReservation } from '../../../../api/reservations'
 import { useAuth } from '../../../../context/AuthContext'
 import { useToast } from '../../../../context/ToastContext'
+import { PrimaryButton } from '../../ui/Button'
 
 const PHONE_PATTERN = /^010-\d{4}-\d{4}$/
 
@@ -11,17 +12,6 @@ function formatPhone(raw: string) {
   if (digits.length <= 3) return digits
   if (digits.length <= 7) return `${digits.slice(0, 3)}-${digits.slice(3)}`
   return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`
-}
-
-function HospitalStripe() {
-  return (
-    <span
-      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[13px] text-center font-mono text-[10px] font-semibold text-black/40"
-      style={{ backgroundImage: 'repeating-linear-gradient(135deg, rgba(20,35,29,.05) 0 8px, transparent 8px 16px)' }}
-    >
-      병원
-    </span>
-  )
 }
 
 function HospitalCard({
@@ -83,7 +73,6 @@ function HospitalCard({
         onClick={onToggle}
         className="group flex w-full cursor-pointer items-center gap-3.5 text-left active:scale-[0.99]"
       >
-        <HospitalStripe />
         <div className="flex-1">
           <p className="text-base font-extrabold text-ink">{hospital.hospitalName}</p>
           <p className="mt-0.5 text-xs text-ink-muted">
@@ -154,14 +143,9 @@ function HospitalCard({
             </div>
           )}
 
-          <button
-            type="button"
-            disabled={!selectedSlot || submitting}
-            onClick={handleReserve}
-            className="mt-3 w-full cursor-pointer rounded-[13px] bg-primary py-3.5 text-[15px] font-bold text-white shadow-[0_14px_28px_-14px_rgba(11,107,80,0.55)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_18px_32px_-14px_rgba(11,107,80,0.6)] active:translate-y-0 active:scale-[0.98] active:shadow-[0_8px_16px_-10px_rgba(11,107,80,0.4)] disabled:cursor-not-allowed disabled:opacity-50"
-          >
+          <PrimaryButton disabled={!selectedSlot || submitting} onClick={handleReserve} className="mt-3">
             {submitting ? '예약 요청 중...' : selectedSlot ? `${selectedSlot.startTime} 예약 요청` : '예약 가능한 슬롯 없음'}
-          </button>
+          </PrimaryButton>
           <p className="mt-2 text-center text-[11px] text-ink-faint">병원 승인 후 확정됩니다</p>
         </div>
       </div>

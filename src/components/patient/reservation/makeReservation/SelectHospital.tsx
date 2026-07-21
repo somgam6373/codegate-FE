@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { getDepartments, getDistricts } from '../../../../api/meta'
 import type { MetaItem } from '../../../../api/meta'
 import type { SearchHospitalsParams } from '../../../../api/hospitals'
+import Card from '../../ui/Card'
 
 const HOURS = Array.from({ length: 24 }, (_, h) => `${String(h).padStart(2, '0')}:00`)
 
@@ -37,7 +38,7 @@ function SelectHospital({ onFilterChange }: { onFilterChange: (params: SearchHos
   }, [district, department, date, fromTime, toTime, onFilterChange])
 
   return (
-    <div className="rounded-[22px] border border-black/[0.04] bg-white p-4 shadow-[0_8px_20px_-14px_rgba(20,35,29,0.3)]">
+    <Card padding="sm">
       <div className="mb-3 flex gap-2.5">
         <label className="flex-1">
           <div className="mb-1.5 text-xs font-semibold text-ink-muted">지역구</div>
@@ -118,7 +119,7 @@ function SelectHospital({ onFilterChange }: { onFilterChange: (params: SearchHos
           </select>
         </label>
       </div>
-    </div>
+    </Card>
   )
 }
 

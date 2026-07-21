@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { cancelReservation, getPatientReservation } from '../../api/reservations'
 import type { PatientReservation, ReservationStatus } from '../../api/reservations'
 import { useToast } from '../../context/ToastContext'
+import Card from '../../components/patient/ui/Card'
 
 const STATUS_STYLE: Record<ReservationStatus, string> = {
   REQUESTED: 'bg-[#fdf3df] text-[#c98a1e]',
@@ -73,7 +74,7 @@ function ReservationDetailPage() {
           <p className="py-12 text-center text-sm text-ink-faint">예약 정보를 찾을 수 없어요</p>
         ) : (
           <>
-            <div className="rounded-[22px] border border-black/[0.04] bg-white p-4.5 shadow-[0_10px_24px_-18px_rgba(20,35,29,0.35)]">
+            <Card>
               <span
                 className={`inline-block rounded-xl px-2.5 py-1 text-[11px] font-bold ${STATUS_STYLE[reservation.status]}`}
               >
@@ -88,13 +89,13 @@ function ReservationDetailPage() {
                 <InfoRow label="환자" value={reservation.patientName} />
                 <InfoRow label="연락처" value={reservation.patientPhone} />
               </div>
-            </div>
+            </Card>
 
             {reservation.symptom && (
-              <div className="mt-3 rounded-[22px] border border-black/[0.04] bg-white p-4.5 shadow-[0_10px_24px_-18px_rgba(20,35,29,0.35)]">
+              <Card className="mt-3">
                 <p className="mb-1.5 text-[13px] font-bold text-ink">증상</p>
                 <p className="text-sm leading-relaxed text-[#2b3a33]">{reservation.symptom}</p>
-              </div>
+              </Card>
             )}
 
             {reservation.hospitalMemo && (

@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import type { MedicalFileType } from '../../../../api/medicalFiles'
+import { PrimaryButton } from '../../ui/Button'
 
 interface VideoUploadProps {
   uploading?: boolean
@@ -56,14 +57,9 @@ function VideoUpload({ uploading = false, onUpload }: VideoUploadProps) {
       </div>
       <p className="text-base font-bold text-ink">MRI·CT·소견서 업로드</p>
       <p className="mt-1.5 text-[13px] text-ink-muted">DICOM · MP4 · JPG · PNG · PDF 파일 지원</p>
-      <button
-        type="button"
-        onClick={() => inputRef.current?.click()}
-        disabled={uploading}
-        className="mt-4 cursor-pointer rounded-xl bg-primary px-5 py-3 text-sm font-extrabold text-white transition-all duration-200 hover:bg-primary-deep active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-ink-faint"
-      >
+      <PrimaryButton onClick={() => inputRef.current?.click()} disabled={uploading} className="mt-4">
         {uploading ? '업로드 중...' : '파일 선택'}
-      </button>
+      </PrimaryButton>
       <input
         ref={inputRef}
         type="file"
