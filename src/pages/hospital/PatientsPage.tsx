@@ -1,11 +1,34 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { HospitalHeader } from './HospitalLayout'
-import { getHospitalReservations, getReservationPatientInfo } from '../../api/hospital'
+import {
+  getHospitalReservations,
+  getReservationPatientInfo,
+  getReservationMedicalFiles,
+  getReservationMedicalFileContent,
+  getReservationMedicalFileOcrResult,
+} from '../../api/hospital'
 import type { HospitalReservation, ReservationPatientInfo } from '../../api/hospital'
+import type { MedicalFile, MedicalFileOcrResult, MedicalFileType } from '../../api/medicalFiles'
 import { useToast } from '../../context/ToastContext'
 
 type Filter = '전체' | '주의 필요' | '최근 방문'
+
+const FILE_TYPE_LABEL: Record<MedicalFileType, string> = {
+  CHECKUP_RESULT: '건강검진결과지',
+  OPINION_LETTER: '소견서',
+  CT: 'CT',
+  MRI: 'MRI',
+  XRAY: 'X-Ray',
+}
+
+const FILE_TYPE_COLOR: Record<MedicalFileType, string> = {
+  CHECKUP_RESULT: '#0e2540',
+  OPINION_LETTER: '#154734',
+  CT: '#232a55',
+  MRI: '#331f4a',
+  XRAY: '#4a1f2f',
+}
 
 interface PatientRow {
   reservationId: number
@@ -63,6 +86,12 @@ function PatientsPage() {
   const [loading, setLoading] = useState(true)
   const [detail, setDetail] = useState<ReservationPatientInfo | null>(null)
 
+  const [files, setFiles] = useState<MedicalFile[]>([])
+  const [activeFileId, setActiveFileId] = useState<number | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [ocrResult, setOcrResult] = useState<MedicalFileOcrResult | null>(null)
+  const [ocrError, setOcrError] = useState<string | null>(null)
+
   const pid = searchParams.get('pid')
 
   useEffect(() => {
@@ -85,6 +114,62 @@ function PatientsPage() {
       .then(setDetail)
       .catch((err) => showToast(err instanceof Error ? err.message : '환자 상세 조회에 실패했어요', 'error'))
   }, [selected, showToast])
+
+  useEffect(() => {
+    if (!selected) {
+      setFiles([])
+      setActiveFileId(null)
+      return
+    }
+    getReservationMedicalFiles(selected.reservationId)
+      .then((list) => {
+        setFiles(list)
+        setActiveFileId(list[0]?.id ?? null)
+      })
+      .catch((err) => showToast(err instanceof Error ? err.message : '의료파일 조회에 실패했어요', 'error'))
+  }, [selected, showToast])
+
+  const activeFile = useMemo(() => files.find((f) => f.id === activeFileId) ?? null, [files, activeFileId])
+
+  useEffect(() => {
+    if (!selected || !activeFile || !activeFile.contentType?.startsWith('image/')) {
+      setPreviewUrl(null)
+      return
+    }
+    let cancelled = false
+    let url: string | null = null
+    getReservationMedicalFileContent(selected.reservationId, activeFile.id)
+      .then((blob) => {
+        if (cancelled) return
+        url = URL.createObjectURL(blob)
+        setPreviewUrl(url)
+      })
+      .catch((err) => showToast(err instanceof Error ? err.message : '파일 미리보기에 실패했어요', 'error'))
+    return () => {
+      cancelled = true
+      if (url) URL.revokeObjectURL(url)
+    }
+  }, [selected, activeFile, showToast])
+
+  useEffect(() => {
+    if (!selected || !activeFile || activeFile.type !== 'CHECKUP_RESULT') {
+      setOcrResult(null)
+      setOcrError(null)
+      return
+    }
+    setOcrResult(null)
+    setOcrError(null)
+    getReservationMedicalFileOcrResult(selected.reservationId, activeFile.id)
+      .then(setOcrResult)
+      .catch((err) => setOcrError(err instanceof Error ? err.message : 'OCR 결과 조회에 실패했어요'))
+  }, [selected, activeFile])
+
+  function openFileInNewTab(file: MedicalFile) {
+    if (!selected) return
+    getReservationMedicalFileContent(selected.reservationId, file.id)
+      .then((blob) => window.open(URL.createObjectURL(blob), '_blank'))
+      .catch((err) => showToast(err instanceof Error ? err.message : '파일을 열 수 없어요', 'error'))
+  }
 
   const filtered = useMemo(() => {
     if (filter === '주의 필요') return rows.filter((r) => r.status === 'REQUESTED')
@@ -203,23 +288,78 @@ function PatientsPage() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div style={{ fontSize: 20, fontWeight: 800, color: '#14231d' }}>등록 의료 영상</div>
-              <div className="h-image-hint">진단서 · CT · MRI 영상을 확인할 수 있습니다. 이미지를 클릭하면 확대됩니다.</div>
-              <div className="h-stripe h-image-main">
-                진단서 영상
-                <span className="h-image-tag">진단서</span>
-                <span className="h-image-zoom-hint">⊕ 클릭하여 확대</span>
+              <div className="h-image-hint">진단서 · CT · MRI 영상을 확인할 수 있습니다. 이미지를 클릭하면 새 탭에서 열립니다.</div>
+              <div
+                className="h-image-main"
+                style={{ backgroundColor: activeFile ? FILE_TYPE_COLOR[activeFile.type] : '#0e2540', cursor: activeFile ? 'pointer' : 'default' }}
+                onClick={() => activeFile && openFileInNewTab(activeFile)}
+              >
+                {previewUrl ? (
+                  <img
+                    src={previewUrl}
+                    alt={activeFile?.originalFileName}
+                    style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 18 }}
+                  />
+                ) : (
+                  <div className="h-stripe" style={{ width: '100%', height: '100%' }}>
+                    {activeFile ? activeFile.originalFileName : '등록된 의료파일이 없어요'}
+                  </div>
+                )}
+                {activeFile && (
+                  <>
+                    <span className="h-image-tag">{FILE_TYPE_LABEL[activeFile.type]}</span>
+                    <span className="h-image-zoom-hint">⊕ 클릭하여 확대</span>
+                  </>
+                )}
               </div>
               <div className="h-image-thumbs">
-                <div className="h-stripe h-image-thumb active" style={{ backgroundColor: '#0e2540' }}>
-                  진단서
-                </div>
-                <div className="h-stripe h-image-thumb" style={{ backgroundColor: '#232a55' }}>
-                  CT
-                </div>
-                <div className="h-stripe h-image-thumb" style={{ backgroundColor: '#331f4a' }}>
-                  MRI
-                </div>
+                {files.map((f) => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    className={`h-stripe h-image-thumb${f.id === activeFileId ? ' active' : ''}`}
+                    style={{ backgroundColor: FILE_TYPE_COLOR[f.type], border: 'none', padding: 0, cursor: 'pointer' }}
+                    onClick={() => setActiveFileId(f.id)}
+                  >
+                    {FILE_TYPE_LABEL[f.type]}
+                  </button>
+                ))}
               </div>
+              {activeFile?.type === 'CHECKUP_RESULT' && (
+                <div className="h-sub-card h-detail-section">
+                  <div className="h-detail-section-title">건강검진 OCR 요약</div>
+                  {ocrError ? (
+                    <p style={{ color: 'var(--h-red)' }}>{ocrError}</p>
+                  ) : !ocrResult ? (
+                    <p style={{ color: '#7c8c83' }}>불러오는 중이에요</p>
+                  ) : ocrResult.status === 'FAILED' ? (
+                    <p style={{ color: 'var(--h-red)' }}>{ocrResult.errorMessage ?? 'OCR 처리에 실패했어요'}</p>
+                  ) : ocrResult.status !== 'COMPLETED' ? (
+                    <p style={{ color: '#7c8c83' }}>OCR 분석 중이에요</p>
+                  ) : (
+                    <>
+                      <div className="h-detail-block-label">요약</div>
+                      <div className="h-detail-block-value">{ocrResult.summary}</div>
+                      <div className="h-detail-block-label">추천 음식</div>
+                      <div className="h-detail-block-value">{ocrResult.recommendedFood}</div>
+                      <div className="h-detail-block-label">추천 운동</div>
+                      <div className="h-detail-block-value">{ocrResult.recommendedExercise}</div>
+                      <div className="h-detail-field">
+                        <span className="h-detail-label">혈압</span>
+                        <span className="h-detail-value">{ocrResult.bloodPressureScorePercent ?? '-'}</span>
+                      </div>
+                      <div className="h-detail-field">
+                        <span className="h-detail-label">혈당</span>
+                        <span className="h-detail-value">{ocrResult.bloodSugarScorePercent ?? '-'}</span>
+                      </div>
+                      <div className="h-detail-field">
+                        <span className="h-detail-label">감마GTP</span>
+                        <span className="h-detail-value">{ocrResult.gammaGtpScorePercent ?? '-'}</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
               <div className="h-sub-card h-detail-section" style={{ marginTop: 4 }}>
                 <div className="h-memo-title">
                   <span className="h-memo-dot" />

@@ -1,5 +1,6 @@
-import { api, unwrapApiResponse } from './client'
+import { api, unwrapApiResponse, ApiError, BASE_URL } from './client'
 import type { ApiResponse } from './client'
+import type { MedicalFile, MedicalFileOcrResult } from './medicalFiles'
 
 export interface HospitalMe {
   hospitalId: number
@@ -151,4 +152,34 @@ export function getReservationPatientInfo(reservationId: number) {
   return api<ApiResponse<ReservationPatientInfo>>(
     `/api/v1/hospital/reservations/${reservationId}/patient`,
   ).then(unwrapApiResponse)
+}
+
+export function getReservationMedicalFiles(reservationId: number) {
+  return api<ApiResponse<MedicalFile[]>>(
+    `/api/v1/hospital/reservations/${reservationId}/medical-files`,
+  ).then(unwrapApiResponse)
+}
+
+export function getReservationMedicalFileOcrResult(reservationId: number, medicalFileId: number) {
+  return api<ApiResponse<MedicalFileOcrResult>>(
+    `/api/v1/hospital/reservations/${reservationId}/medical-files/${medicalFileId}/ocr-result`,
+  ).then(unwrapApiResponse)
+}
+
+export async function getReservationMedicalFileContent(reservationId: number, medicalFileId: number): Promise<Blob> {
+  const token = localStorage.getItem('token')
+  const res = await fetch(
+    `${BASE_URL}/api/v1/hospital/reservations/${reservationId}/medical-files/${medicalFileId}/content`,
+    { headers: token ? { Authorization: `Bearer ${token}` } : {} },
+  )
+  if (res.ok) return res.blob()
+
+  const text = await res.text()
+  try {
+    const body = JSON.parse(text) as ApiResponse<never>
+    throw new ApiError(body.error?.code ?? 'API_ERROR', body.error?.message ?? '파일을 불러오지 못했습니다.', body.error?.details)
+  } catch (e) {
+    if (e instanceof ApiError) throw e
+    throw new ApiError('HTTP_ERROR', `${res.status} ${res.statusText}`)
+  }
 }
