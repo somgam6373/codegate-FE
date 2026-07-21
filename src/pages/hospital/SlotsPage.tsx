@@ -46,7 +46,7 @@ function SlotsPage() {
 
   return (
     <>
-      <HospitalHeader title="슬롯 조회" subtitle="진료 가능 시간대 확인" hideSearch />
+      <HospitalHeader title="슬롯 조회" subtitle="진료 가능 시간대 확인" />
       <div className="h-content">
         <div className="h-card" style={{ overflow: 'hidden' }}>
           <div className="h-list-header">

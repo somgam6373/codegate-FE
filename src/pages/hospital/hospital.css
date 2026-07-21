@@ -190,28 +190,6 @@
   margin-top: 1px;
 }
 
-.h-search {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: #f0f5f2;
-  border-radius: 12px;
-  padding: 11px 16px;
-  width: 280px;
-  color: var(--h-text-muted);
-  font-size: 17px;
-  margin-left: auto;
-}
-
-.h-search input {
-  border: none;
-  background: none;
-  outline: none;
-  font-size: 17px;
-  width: 100%;
-  color: var(--h-text);
-}
-
 .h-bell {
   width: 42px;
   height: 42px;
@@ -222,18 +200,6 @@
   justify-content: center;
   position: relative;
   flex: none;
-}
-
-.h-bell::after {
-  content: '';
-  position: absolute;
-  top: 9px;
-  right: 10px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--h-red);
-  border: 2px solid #f0f5f2;
 }
 
 .h-content {
@@ -564,6 +530,11 @@
 
 .h-cal-cell.today {
   border: 2px solid var(--h-green-light);
+}
+
+.h-cal-cell.closed .h-cal-num {
+  color: var(--h-text-muted);
+  font-weight: 500;
 }
 
 .h-cal-cell.selected {

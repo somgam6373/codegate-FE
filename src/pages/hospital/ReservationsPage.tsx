@@ -3,17 +3,19 @@ import { useNavigate } from 'react-router-dom'
 import { approveReservation, getHospitalReservations, rejectReservation, type HospitalReservation } from '../../api/hospital'
 import { useToast } from '../../context/ToastContext'
 import { HospitalHeader } from './HospitalLayout'
-import { buildCalendarCells, weekdayLabels } from './hospitalData'
+import { buildCalendarCells, useHospitalTodayStats, weekdayLabels } from './hospitalData'
 
 function ReservationsPage() {
   const navigate = useNavigate()
   const showToast = useToast()
+  const stats = useHospitalTodayStats((msg) => showToast(msg, 'error'))
   const [monthOffset, setMonthOffset] = useState(0)
   const [resolvedIds, setResolvedIds] = useState<Record<number, true>>({})
   const [pending, setPending] = useState<HospitalReservation[]>([])
   const [monthReservations, setMonthReservations] = useState<HospitalReservation[]>([])
 
   const today = new Date()
+  const todayLabel = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일 ${weekdayLabels[today.getDay()]}요일`
   const visibleMonth = new Date(today.getFullYear(), today.getMonth() + monthOffset, 1)
   const year = visibleMonth.getFullYear()
   const month = visibleMonth.getMonth()
@@ -79,13 +81,14 @@ function ReservationsPage() {
 
   return (
     <>
-      <HospitalHeader title="예약 관리" subtitle="2026년 7월 21일 화요일" />
+      <HospitalHeader title="예약 관리" subtitle={todayLabel} />
       <div className="h-content">
         <div className="h-stat-grid">
           <div className="h-card h-stat-card">
             <div className="h-stat-label">오늘 예약</div>
             <div className="h-stat-value">
-              24<span className="h-stat-unit">건</span>
+              {stats.todayReservations.length}
+              <span className="h-stat-unit">건</span>
             </div>
           </div>
           <div className="h-card h-stat-card pending">
@@ -98,13 +101,15 @@ function ReservationsPage() {
           <div className="h-card h-stat-card">
             <div className="h-stat-label">진료 완료</div>
             <div className="h-stat-value success">
-              15<span className="h-stat-unit">건</span>
+              {stats.completedCount}
+              <span className="h-stat-unit">건</span>
             </div>
           </div>
           <div className="h-card h-stat-card">
             <div className="h-stat-label">취소·거절</div>
             <div className="h-stat-value">
-              3<span className="h-stat-unit">건</span>
+              {stats.canceledCount}
+              <span className="h-stat-unit">건</span>
             </div>
           </div>
         </div>

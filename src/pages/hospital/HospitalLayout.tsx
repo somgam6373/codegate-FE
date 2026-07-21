@@ -67,26 +67,16 @@ const navItems = [
 interface HospitalHeaderProps {
   title: string
   subtitle: string
-  hideSearch?: boolean
 }
 
-export function HospitalHeader({ title, subtitle, hideSearch }: HospitalHeaderProps) {
+export function HospitalHeader({ title, subtitle }: HospitalHeaderProps) {
   return (
     <header className="h-header">
       <div>
         <div className="h-header-title">{title}</div>
         <div className="h-header-subtitle">{subtitle}</div>
       </div>
-      {!hideSearch && (
-        <div className="h-search">
-          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="#9aa8a0" strokeWidth={1.8}>
-            <circle cx="8.5" cy="8.5" r="6" />
-            <line x1="13" y1="13" x2="17" y2="17" strokeLinecap="round" />
-          </svg>
-          <input type="text" placeholder="환자·예약 검색" aria-label="환자·예약 검색" />
-        </div>
-      )}
-      <button type="button" className="h-bell" style={hideSearch ? { marginLeft: 'auto' } : undefined} aria-label="알림">
+      <button type="button" className="h-bell" style={{ marginLeft: 'auto' }} aria-label="알림">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#5c6f66" strokeWidth={1.8}>
           <path d="M10 3a5 5 0 015 5v3l1.5 2.5H3.5L5 11V8a5 5 0 015-5z" />
           <path d="M8 16a2 2 0 004 0" strokeLinecap="round" />
@@ -131,10 +121,10 @@ function HospitalLayout() {
           ))}
         </nav>
         <div className="h-sidebar-footer">
-          <div className="h-avatar">박</div>
+          <div className="h-avatar">{hospitalName.charAt(0) || '병'}</div>
           <div style={{ flex: 1 }}>
-            <div className="h-doctor-name">박지현 원장</div>
-            <div className="h-doctor-org">{hospitalName}</div>
+            <div className="h-doctor-name">{hospitalName || '병원'}</div>
+            <div className="h-doctor-org">병원 관리자</div>
           </div>
           <button type="button" className="h-logout-btn" onClick={handleLogout} aria-label="로그아웃">
             <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.8}>

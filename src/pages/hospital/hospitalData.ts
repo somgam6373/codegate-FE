@@ -1,3 +1,7 @@
+import { useEffect, useState } from 'react'
+import { getHospitalReservations } from '../../api/hospital'
+import type { HospitalReservation } from '../../api/hospital'
+
 export interface CalendarCell {
   day: number | null
   hasBadge: boolean
@@ -29,6 +33,7 @@ export function buildCalendarCells(year: number, month: number, badgeCounts: Rec
 }
 
 export const weekdayLabels = ['일', '월', '화', '수', '목', '금', '토']
+export const MON_FIRST_DAYS = ['월', '화', '수', '목', '금', '토', '일']
 
 export interface ClinicSubject {
   id: string
@@ -40,5 +45,63 @@ export interface WeeklyHours {
   open: boolean
   start: string
   end: string
+}
+
+export function todayDateString(date: Date = new Date()): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
+// 일요일(0)을 주의 끝으로 보고 월요일 기준 0부터 시작하는 요일 오프셋으로 바꾼다
+export function daysSinceMonday(date: Date): number {
+  return date.getDay() === 0 ? 6 : date.getDay() - 1
+}
+
+const CLOSED_STATUSES: HospitalReservation['status'][] = ['REJECTED', 'PATIENT_CANCELED', 'HOSPITAL_CANCELED']
+
+function nowTimeString(): string {
+  const d = new Date()
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
+export interface HospitalTodayStats {
+  todayReservations: HospitalReservation[]
+  pendingCount: number
+  completedCount: number
+  canceledCount: number
+  patientCount: number
+}
+
+// 대시보드·예약관리 페이지 상단 통계 카드가 공유하는 데이터. 각 페이지는 필요한 필드만 골라 쓴다.
+export function useHospitalTodayStats(onError?: (message: string) => void): HospitalTodayStats {
+  const [stats, setStats] = useState<HospitalTodayStats>({
+    todayReservations: [],
+    pendingCount: 0,
+    completedCount: 0,
+    canceledCount: 0,
+    patientCount: 0,
+  })
+
+  useEffect(() => {
+    const today = todayDateString()
+    Promise.all([
+      getHospitalReservations({ fromDate: today, toDate: today, size: 200 }),
+      getHospitalReservations({ status: 'REQUESTED', size: 1 }),
+      getHospitalReservations({ size: 200 }),
+    ])
+      .then(([todayPage, pendingPage, recentPage]) => {
+        const todayReservations = todayPage.content
+        const now = nowTimeString()
+        setStats({
+          todayReservations,
+          pendingCount: pendingPage.totalElements,
+          completedCount: todayReservations.filter((r) => r.status === 'APPROVED' && r.endTime <= now).length,
+          canceledCount: todayReservations.filter((r) => CLOSED_STATUSES.includes(r.status)).length,
+          patientCount: new Set(recentPage.content.map((r) => r.patientId)).size,
+        })
+      })
+      .catch((err) => onError?.(err instanceof Error ? err.message : '통계 조회에 실패했어요'))
+  }, [])
+
+  return stats
 }
 

@@ -1,26 +1,52 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { getHospitalReservations } from '../../api/hospital'
-import type { HospitalReservation } from '../../api/hospital'
 import { useToast } from '../../context/ToastContext'
 import { HospitalHeader } from './HospitalLayout'
+import { MON_FIRST_DAYS, daysSinceMonday, todayDateString, useHospitalTodayStats } from './hospitalData'
 
-const CLOSED_STATUSES: HospitalReservation['status'][] = ['REJECTED', 'PATIENT_CANCELED', 'HOSPITAL_CANCELED']
+const CLOSED_STATUSES = ['REJECTED', 'PATIENT_CANCELED', 'HOSPITAL_CANCELED']
 
-function todayDateString() {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+const CHART_X = [30, 118, 206, 294, 382, 470, 545]
+
+function weekdayIndexOf(dateStr: string): number {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  return daysSinceMonday(new Date(y, m - 1, d))
+}
+
+function startOfWeek(date: Date): Date {
+  const monday = new Date(date)
+  monday.setDate(date.getDate() - daysSinceMonday(date))
+  return monday
 }
 
 function DashboardPage() {
   const showToast = useToast()
-  const [schedule, setSchedule] = useState<HospitalReservation[]>([])
+  const stats = useHospitalTodayStats((msg) => showToast(msg, 'error'))
+  const [weeklyCounts, setWeeklyCounts] = useState<number[]>(Array(7).fill(0))
+
+  const schedule = useMemo(
+    () => [...stats.todayReservations].sort((a, b) => a.startTime.localeCompare(b.startTime)),
+    [stats.todayReservations],
+  )
 
   useEffect(() => {
-    const date = todayDateString()
-    getHospitalReservations({ fromDate: date, toDate: date })
-      .then((page) => setSchedule([...page.content].sort((a, b) => a.startTime.localeCompare(b.startTime))))
-      .catch((err) => showToast(err instanceof Error ? err.message : '오늘 진료 일정을 불러오지 못했어요', 'error'))
+    const monday = startOfWeek(new Date())
+    const sunday = new Date(monday)
+    sunday.setDate(monday.getDate() + 6)
+    getHospitalReservations({ fromDate: todayDateString(monday), toDate: todayDateString(sunday), size: 200 })
+      .then((page) => {
+        const counts = Array(7).fill(0)
+        for (const r of page.content) counts[weekdayIndexOf(r.date)]++
+        setWeeklyCounts(counts)
+      })
+      .catch((err) => showToast(err instanceof Error ? err.message : '주간 예약 추이를 불러오지 못했어요', 'error'))
   }, [showToast])
+
+  const maxCount = Math.max(...weeklyCounts, 1)
+  const chartPoints = CHART_X.map((x, i) => `${x},${170 - (weeklyCounts[i] / maxCount) * 130}`)
+  const linePoints = chartPoints.join(' ')
+  const areaPoints = `${linePoints} ${CHART_X[6]},170 ${CHART_X[0]},170`
+  const [todayX, todayY] = chartPoints[daysSinceMonday(new Date())].split(',').map(Number)
 
   return (
     <>
@@ -30,25 +56,29 @@ function DashboardPage() {
           <div className="h-card h-stat-card">
             <div className="h-stat-label">오늘 예약</div>
             <div className="h-stat-value">
-              24<span className="h-stat-unit">건</span>
+              {schedule.length}
+              <span className="h-stat-unit">건</span>
             </div>
           </div>
           <div className="h-card h-stat-card">
             <div className="h-stat-label">등록 환자</div>
             <div className="h-stat-value">
-              1,284<span className="h-stat-unit">명</span>
+              {stats.patientCount.toLocaleString()}
+              <span className="h-stat-unit">명</span>
             </div>
           </div>
           <div className="h-card h-stat-card pending">
             <div className="h-stat-label warn">승인 대기</div>
             <div className="h-stat-value">
-              6<span className="h-stat-unit">건</span>
+              {stats.pendingCount}
+              <span className="h-stat-unit">건</span>
             </div>
           </div>
           <div className="h-card h-stat-card">
             <div className="h-stat-label">진료 완료</div>
             <div className="h-stat-value success">
-              15<span className="h-stat-unit">건</span>
+              {stats.completedCount}
+              <span className="h-stat-unit">건</span>
             </div>
           </div>
         </div>
@@ -62,23 +92,21 @@ function DashboardPage() {
               <line x1="0" y1="120" x2="560" y2="120" stroke="#eef2ef" />
               <line x1="0" y1="170" x2="560" y2="170" stroke="#e2e9e5" />
               <polyline
-                points="30,140 118,110 206,120 294,70 382,90 470,45 545,60"
+                points={linePoints}
                 fill="none"
                 stroke="#12a67a"
                 strokeWidth={3.5}
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
-              <polygon points="30,140 118,110 206,120 294,70 382,90 470,45 545,60 545,170 30,170" fill="#12a67a" opacity={0.08} />
-              <circle cx="470" cy="45" r="5" fill="#12a67a" />
+              <polygon points={areaPoints} fill="#12a67a" opacity={0.08} />
+              <circle cx={todayX} cy={todayY} r={5} fill="#12a67a" />
               <g fontSize={14} fill="#9aa8a0" fontFamily="'IBM Plex Sans KR'">
-                <text x="24" y="192">월</text>
-                <text x="112" y="192">화</text>
-                <text x="200" y="192">수</text>
-                <text x="288" y="192">목</text>
-                <text x="376" y="192">금</text>
-                <text x="464" y="192">토</text>
-                <text x="540" y="192">일</text>
+                {MON_FIRST_DAYS.map((label, i) => (
+                  <text key={label} x={CHART_X[i] - 6} y="192">
+                    {label}
+                  </text>
+                ))}
               </g>
             </svg>
           </div>

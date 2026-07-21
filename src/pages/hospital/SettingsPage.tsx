@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
-import { createHospitalSlot, getHospitalMe, updateHospitalMe } from '../../api/hospital'
+import { createHospitalSlot, getHospitalMe, getHospitalReservations, updateHospitalMe, type HospitalReservation } from '../../api/hospital'
 import { useToast } from '../../context/ToastContext'
 import { HospitalHeader } from './HospitalLayout'
-import { buildCalendarCells, weekdayLabels, type ClinicSubject, type WeeklyHours } from './hospitalData'
+import { MON_FIRST_DAYS, buildCalendarCells, daysSinceMonday, weekdayLabels, type ClinicSubject, type WeeklyHours } from './hospitalData'
 
-const DAY_ORDER = ['월', '화', '수', '목', '금', '토', '일']
+const DAY_ORDER = MON_FIRST_DAYS
 
 function formatDate(year: number, month: number, day: number): string {
   return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
@@ -23,9 +23,8 @@ function hoursBetween(start: string, end: string): string[] {
 function getDateForWeekdayThisWeek(day: string): string {
   const idx = DAY_ORDER.indexOf(day)
   const today = new Date()
-  const daysSinceMonday = today.getDay() === 0 ? 6 : today.getDay() - 1
   const target = new Date(today)
-  target.setDate(today.getDate() - daysSinceMonday + idx)
+  target.setDate(today.getDate() - daysSinceMonday(today) + idx)
   return formatDate(target.getFullYear(), target.getMonth(), target.getDate())
 }
 
@@ -72,6 +71,10 @@ function parseAvailableTime(raw: string): WeeklyHours[] {
   }))
 }
 
+function weekdayOf(year: number, month: number, day: number): string {
+  return weekdayLabels[new Date(year, month, day).getDay()]
+}
+
 function formatAvailableTime(hours: WeeklyHours[]): string {
   const open = hours.filter((h) => h.open)
   if (open.length === 0) return ''
@@ -91,18 +94,20 @@ function TimeModal({
   month,
   day,
   subjects,
+  defaultHours,
   onClose,
 }: {
   year: number
   month: number
   day: number
   subjects: ClinicSubject[]
+  defaultHours: WeeklyHours | undefined
   onClose: () => void
 }) {
   const showToast = useToast()
-  const [available, setAvailable] = useState(true)
-  const [start, setStart] = useState('09:00')
-  const [end, setEnd] = useState('18:00')
+  const [available, setAvailable] = useState(defaultHours?.open ?? true)
+  const [start, setStart] = useState(defaultHours?.open ? defaultHours.start : '09:00')
+  const [end, setEnd] = useState(defaultHours?.open ? defaultHours.end : '18:00')
   const [saving, setSaving] = useState(false)
 
   async function handleSave() {
@@ -183,8 +188,24 @@ function TimeModal({
 function SettingsPage() {
   const showToast = useToast()
   const today = useMemo(() => new Date(), [])
-  const cells = useMemo(() => buildCalendarCells(today.getFullYear(), today.getMonth()), [today])
+  const [monthOffset, setMonthOffset] = useState(0)
+  const visibleMonth = useMemo(() => new Date(today.getFullYear(), today.getMonth() + monthOffset, 1), [today, monthOffset])
+  const year = visibleMonth.getFullYear()
+  const month = visibleMonth.getMonth()
+  const monthLabel = `${year}년 ${month + 1}월`
   const [modalDay, setModalDay] = useState<number | null>(null)
+
+  const [monthReservations, setMonthReservations] = useState<HospitalReservation[]>([])
+  const badgeCounts = useMemo(() => {
+    const counts: Record<number, number> = {}
+    for (const r of monthReservations) {
+      if (r.status !== 'REQUESTED' && r.status !== 'APPROVED') continue
+      const day = Number(r.date.split('-')[2])
+      counts[day] = (counts[day] ?? 0) + 1
+    }
+    return counts
+  }, [monthReservations])
+  const cells = useMemo(() => buildCalendarCells(year, month, badgeCounts), [year, month, badgeCounts])
 
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
@@ -207,6 +228,15 @@ function SettingsPage() {
       })
       .catch((err) => showToast(err instanceof Error ? err.message : '병원 정보 조회에 실패했어요', 'error'))
   }, [showToast])
+
+  useEffect(() => {
+    const pad = (n: number) => String(n).padStart(2, '0')
+    const fromDate = `${year}-${pad(month + 1)}-01`
+    const toDate = `${year}-${pad(month + 1)}-${pad(new Date(year, month + 1, 0).getDate())}`
+    getHospitalReservations({ fromDate, toDate, size: 200 })
+      .then((res) => setMonthReservations(res.content))
+      .catch((err) => showToast(err instanceof Error ? err.message : '예약 캘린더 조회에 실패했어요', 'error'))
+  }, [year, month, showToast])
 
   function removeSubject(id: string) {
     setSubjects((prev) => prev.filter((s) => s.id !== id))
@@ -270,7 +300,7 @@ function SettingsPage() {
 
   return (
     <>
-      <HospitalHeader title="진료 설정" subtitle="진료과목·일정 관리" hideSearch />
+      <HospitalHeader title="진료 설정" subtitle="진료과목·일정 관리" />
       <div className="h-content">
         <div className="h-settings-grid">
           <div className="h-card h-settings-card">
@@ -330,7 +360,10 @@ function SettingsPage() {
 
           <div className="h-card h-settings-card">
             <div className="h-settings-title">기본 운영 시간</div>
-            <div className="h-settings-hint">요일별 진료 가능 여부와 기본 시간을 설정합니다</div>
+            <div className="h-settings-hint">
+              요일을 켜면 이번 주 해당 요일에 진료 시간이 바로 예약 가능하게 등록돼요. 매주 자동으로 반복되지는
+              않으니, 다음 주에도 진료하신다면 다시 켜주세요.
+            </div>
             <div className="h-hours-table">
               {weeklyHours.map((h) => (
                 <div key={h.day} className="h-hours-row">
@@ -368,7 +401,18 @@ function SettingsPage() {
 
           <div className="h-card h-settings-card" style={{ gridColumn: '1 / -1' }}>
             <div className="h-settings-title">진료 가능 일정</div>
-            <div className="h-settings-hint">날짜를 클릭하면 상세 진료 시간을 조정할 수 있습니다</div>
+            <div className="h-settings-hint">
+              특정 날짜만 휴진하거나 진료 시간을 다르게 조정하고 싶을 때 날짜를 클릭해 개별로 설정하세요
+            </div>
+            <div className="h-cal-header">
+              <button type="button" className="h-cal-arrow" onClick={() => setMonthOffset((m) => m - 1)} aria-label="이전 달">
+                ‹
+              </button>
+              <div className="h-cal-title">{monthLabel}</div>
+              <button type="button" className="h-cal-arrow" onClick={() => setMonthOffset((m) => m + 1)} aria-label="다음 달">
+                ›
+              </button>
+            </div>
             <div className="h-cal-weekday-row">
               {weekdayLabels.map((label, i) => (
                 <span key={label} className={`h-cal-weekday${i === 0 ? ' sun' : ''}${i === 6 ? ' sat' : ''}`}>
@@ -377,12 +421,17 @@ function SettingsPage() {
               ))}
             </div>
             <div className="h-cal-grid">
-              {cells.map((cell, i) => (
+              {cells.map((cell, i) => {
+                const dayHours =
+                  cell.day != null
+                    ? weeklyHours.find((h) => h.day === weekdayOf(year, month, cell.day!))
+                    : undefined
+                return (
                 <button
                   key={i}
                   type="button"
                   disabled={cell.day == null}
-                  className={`h-cal-cell${cell.isToday ? ' today' : ''}`}
+                  className={`h-cal-cell${cell.isToday ? ' today' : ''}${dayHours && !dayHours.open ? ' closed' : ''}`}
                   onClick={() => cell.day != null && setModalDay(cell.day)}
                 >
                   {cell.day != null && (
@@ -392,7 +441,8 @@ function SettingsPage() {
                     </>
                   )}
                 </button>
-              ))}
+                )
+              })}
             </div>
           </div>
         </div>
@@ -406,10 +456,11 @@ function SettingsPage() {
 
       {modalDay != null && (
         <TimeModal
-          year={today.getFullYear()}
-          month={today.getMonth()}
+          year={year}
+          month={month}
           day={modalDay}
           subjects={subjects}
+          defaultHours={weeklyHours.find((h) => h.day === weekdayOf(year, month, modalDay))}
           onClose={() => setModalDay(null)}
         />
       )}
